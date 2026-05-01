@@ -4,21 +4,25 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
+import google.generativeai as genai
 import yt_dlp
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Inicializar cliente de Groq
+# 1. Inicializar cliente de Groq (Voz)
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# 2. Inicializar cliente de Gemini (Cognitivo)
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Usamos flash porque es ultrarrápido y barato
+gemini_model = genai.GenerativeModel('gemini-2.5-flash') 
 
 app = FastAPI(title="AIPitch - Backend MVP")
 
-# Modelo de datos para recibir la URL
 class PitchRequest(BaseModel):
     youtube_url: str
 
-# Función auxiliar para descargar audio de YouTube
 def download_audio_from_youtube(url: str, output_filename: str = "temp_audio"):
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -40,7 +44,7 @@ def download_audio_from_youtube(url: str, output_filename: str = "temp_audio"):
 async def analyze_pitch(request: PitchRequest):
     audio_path = None
     try:
-        # 1. DESCARGAR Y EXTRAER AUDIO (Simulando el MP4 que subirá el usuario)
+        # 1. DESCARGAR Y EXTRAER AUDIO
         print("Descargando audio del pitch...")
         audio_path = download_audio_from_youtube(request.youtube_url)
         
@@ -50,21 +54,42 @@ async def analyze_pitch(request: PitchRequest):
             transcription = groq_client.audio.transcriptions.create(
                 file=(audio_path, file.read()),
                 model="whisper-large-v3",
-                prompt="El siguiente es un pitch de innovación o emprendimiento en español. Contiene muletillas.",
+                prompt="El siguiente es un pitch de innovación o emprendimiento en español.",
                 response_format="json",
                 language="es"
             )
         
         pitch_text = transcription.text
         
-        # TODO: 3. DIMENSIÓN CONTENIDO (Gemini RAG) - Lo haremos después
-        # TODO: 4. DIMENSIÓN NO VERBAL (Gemini Multimodal / MediaPipe)
+        # 3. DIMENSIÓN CONTENIDO (Gemini)
+        print("Evaluando contenido con Gemini...")
+        
+        # Este es nuestro "System Prompt" que le da personalidad de Jurado
+        prompt_evaluador = f"""
+        Eres un juez estricto pero constructivo de un fondo concursable de innovación en Chile (tipo CORFO o ANID).
+        Evalúa el siguiente texto de un pitch de emprendimiento. 
+        Devuelve tu análisis en formato JSON estructurado con las siguientes claves:
+        - "puntaje_global": un número del 1 al 100.
+        - "puntos_fuertes": un arreglo con 2 cosas buenas del discurso.
+        - "puntos_debiles": un arreglo con 2 cosas que faltaron (ej. modelo de negocios, equipo, tracción).
+        - "recomendacion": un párrafo corto con un consejo clave para mejorar.
+
+        Texto del pitch:
+        "{pitch_text}"
+        """
+        
+        # Llamada a la API de Gemini
+        respuesta_gemini = gemini_model.generate_content(prompt_evaluador)
+        evaluacion_contenido = respuesta_gemini.text
+        
+        # TODO: 4. DIMENSIÓN NO VERBAL (Postura/Manos) - Próximo paso
         
         return {
             "status": "success",
-            "message": "Dimensión Verbal procesada con éxito",
+            "message": "Análisis Verbal y de Contenido procesados con éxito",
             "data": {
-                "transcription": pitch_text
+                "transcription": pitch_text,
+                "content_evaluation": evaluacion_contenido
             }
         }
 
@@ -72,6 +97,6 @@ async def analyze_pitch(request: PitchRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
     finally:
-        # Limpiar el archivo temporal para no llenar el disco
+        # Limpiar el archivo temporal
         if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
