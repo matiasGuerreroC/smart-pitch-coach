@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Frontend - AIPitch Backend</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .results {
+            display: none;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-section {
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .transcription-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .evaluation-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .score-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .points-list {
+            margin: 15px 0;
+        }
+
+        .points-list h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .points-list ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .points-list li {
+            color: #555;
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .points-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .recommendation-box {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .recommendation-box h4 {
+            color: #c9960e;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .recommendation-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .error {
+            display: none;
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .raw-response {
+            margin-top: 20px;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .raw-response-title {
+            font-weight: 700;
+            color: #666;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .raw-response-title:before {
+            content: "▶ ";
+            transition: transform 0.3s ease;
+        }
+
+        .raw-response-title.expanded:before {
+            content: "▼ ";
+            transform: rotate(0deg);
+        }
+
+        .raw-response-content {
+            display: none;
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .raw-response-content.show {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤 AIPitch Debug Frontend</h1>
+            <p class="subtitle">Prueba tu backend de análisis de pitches en tiempo real</p>
+        </header>
+
+        <form id="analyzeForm">
+            <div class="form-group">
+                <label for="youtubeUrl">URL de YouTube</label>
+                <input
+                    type="text"
+                    id="youtubeUrl"
+                    placeholder="Ej: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    required
+                />
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-primary" id="submitBtn">Analizar Pitch</button>
+                <button type="button" class="btn-secondary" id="clearBtn">Limpiar</button>
+            </div>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Procesando pitch... por favor espera</p>
+        </div>
+
+        <div class="error" id="error">
+            <div class="error-title">Error</div>
+            <div id="errorMessage"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="result-section">
+                <div class="result-title">📝 Transcripción del Pitch</div>
+                <div class="transcription-box" id="transcription">
+                    Cargando transcripción...
+                </div>
+            </div>
+
+            <div class="result-section">
+                <div class="result-title">📊 Evaluación de Contenido</div>
+                <div id="evaluationContainer">
+                    Cargando evaluación...
+                </div>
+            </div>
+
+            <div class="raw-response">
+                <div class="raw-response-title" id="rawResponseTitle">Respuesta JSON Completa</div>
+                <div class="raw-response-content" id="rawResponseContent"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🔧 Debug Frontend | API: <span id="apiEndpoint">http://localhost:8000</span></p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const ENDPOINT = `${API_BASE}/api/v1/analyze-pitch`;
+
+        document.getElementById('apiEndpoint').textContent = API_BASE;
+
+        const form = document.getElementById('analyzeForm');
+        const youtubeUrlInput = document.getElementById('youtubeUrl');
+        const submitBtn = document.getElementById('submitBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const results = document.getElementById('results');
+        const transcriptionBox = document.getElementById('transcription');
+        const evaluationContainer = document.getElementById('evaluationContainer');
+        const rawResponseTitle = document.getElementById('rawResponseTitle');
+        const rawResponseContent = document.getElementById('rawResponseContent');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await analyzeThePitch();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            youtubeUrlInput.value = '';
+            results.classList.remove('show');
+            error.classList.remove('show');
+            youtubeUrlInput.focus();
+        });
+
+        rawResponseTitle.addEventListener('click', () => {
+            rawResponseTitle.classList.toggle('expanded');
+            rawResponseContent.classList.toggle('show');
+        });
+
+        async function analyzeThePitch() {
+            const url = youtubeUrlInput.value.trim();
+
+            if (!url) {
+                showError('Por favor ingresa una URL de YouTube válida');
+                return;
+            }
+
+            // Reset UI
+            error.classList.remove('show');
+            results.classList.remove('show');
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ youtube_url: url }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `Error ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            // Mostrar transcripción
+            transcriptionBox.textContent = data.data.transcription;
+
+            // Procesar evaluación de contenido
+            const evaluationText = data.data.content_evaluation;
+
+            // Intentar parsear JSON desde la respuesta
+            const jsonMatch = evaluationText.match(/\{[\s\S]*\}/);
+            let evaluation = null;
+
+            if (jsonMatch) {
+                try {
+                    evaluation = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    // Si no se puede parsear, mostrar el texto plano
+                    evaluation = null;
+                }
+            }
+
+            if (evaluation) {
+                // Renderizar estructura
+                evaluationContainer.innerHTML = `
+                    <div class="score-badge">${evaluation.puntaje_global || 'N/A'}/100</div>
+
+                    <div class="points-list">
+                        <h4>✨ Puntos Fuertes</h4>
+                        <ul>
+                            ${(evaluation.puntos_fuertes || [])
+                                .map((punto) => `<li>${punto}</li>`)
+                                .join('')}
+                        </ul>
+                    </div>
+
+                    <div class="points-list">
+                        <h4>⚠️ Puntos a Mejorar</h4>
+                        <ul>
+                            ${(evaluation.puntos_debiles || [])
+                                .map((punto) => `<li>${punto}</li>`)
+                                .join('')}
+                        </ul>
+                    </div>
+
+                    <div class="recommendation-box">
+                        <h4>💡 Recomendación</h4>
+                        <p>${evaluation.recomendacion || 'Sin recomendación disponible'}</p>
+                    </div>
+                `;
+            } else {
+                // Si no se pudo parsear, mostrar el texto plano
+                evaluationContainer.innerHTML = `
+                    <div class="evaluation-box">
+                        ${evaluationText}
+                    </div>
+                `;
+            }
+
+            // Mostrar respuesta JSON cruda
+            rawResponseContent.textContent = JSON.stringify(data, null, 2);
+
+            // Mostrar resultados
+            results.classList.add('show');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.add('show');
+        }
+
+        // Focus en el input al cargar
+        youtubeUrlInput.focus();
+    </script>
+</body>
+</html>

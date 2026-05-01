@@ -6,8 +6,12 @@ from dotenv import load_dotenv
 from groq import Groq
 import google.generativeai as genai
 import yt_dlp
+from fastapi.responses import FileResponse
+from pathlib import Path
+
 
 # Cargar variables de entorno
+
 load_dotenv()
 
 # 1. Inicializar cliente de Groq (Voz)
@@ -19,6 +23,33 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 gemini_model = genai.GenerativeModel('gemini-2.5-flash') 
 
 app = FastAPI(title="AIPitch - Backend MVP")
+
+# Obtener ruta del directorio actual
+BASE_DIR = Path(__file__).resolve().parent
+DEBUG_DIR = BASE_DIR / "debug"
+
+# ============================================================================
+# RUTAS DEBUG Y RAÍZ
+# ============================================================================
+
+@app.get("/")
+async def root():
+    """Endpoint raíz con información de la API"""
+    return {
+        "message": "AIPitch Backend API",
+        "version": "1.0.0",
+        "debug": "http://localhost:8000/debug",
+        "endpoints": {
+            "debug": "GET /debug",
+            "analyze_pitch": "POST /api/v1/analyze-pitch"
+        }
+    }
+
+
+@app.get("/debug")
+async def debug_frontend():
+    """Frontend de debug para probar los endpoints de forma intuitiva"""
+    return FileResponse(DEBUG_DIR / "index.html")
 
 class PitchRequest(BaseModel):
     youtube_url: str
