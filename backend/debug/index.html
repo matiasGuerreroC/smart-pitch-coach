@@ -156,6 +156,128 @@
             animation: slideIn 0.3s ease;
         }
 
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .panel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #eef1ff;
+            color: #667eea;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+
+        .video-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .meta-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .meta-label {
+            font-size: 0.78em;
+            color: #667eea;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .meta-value {
+            color: #222;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .meta-value.muted {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .transcript-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .transcript-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .transcript-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .time-range {
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        .segment-index {
+            font-size: 0.8em;
+            color: #888;
+            font-weight: 700;
+        }
+
+        .segment-text {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .filler-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filler-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #fff3cd;
+            color: #8a6400;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+
+        .timeline-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -202,6 +324,65 @@
             font-size: 0.95em;
             line-height: 1.6;
             color: #555;
+        }
+
+        .verbal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+        }
+
+        .metric-label {
+            font-size: 0.82em;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: 800;
+            color: #222;
+        }
+
+        .metric-note {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .pauses-list {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+
+        .pauses-list li {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .empty-state {
+            background: #fff;
+            border: 1px dashed #d0d0d0;
+            border-radius: 8px;
+            padding: 14px;
+            color: #777;
         }
 
         .score-badge {
@@ -386,23 +567,62 @@
         </div>
 
         <div class="results" id="results">
-            <div class="result-section">
-                <div class="result-title">📝 Transcripción del Pitch</div>
-                <div class="transcription-box" id="transcription">
-                    Cargando transcripción...
+            <div class="results-grid">
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">🎬 Información del video</div>
+                        <div class="panel-badge">Metadatos de YouTube</div>
+                    </div>
+                    <div id="videoMetadataContainer">
+                        Cargando información del video...
+                    </div>
                 </div>
-            </div>
 
-            <div class="result-section">
-                <div class="result-title">📊 Evaluación de Contenido</div>
-                <div id="evaluationContainer">
-                    Cargando evaluación...
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">🎙️ Métricas verbales</div>
+                        <div class="panel-badge">Velocidad, pausas y muletillas</div>
+                    </div>
+                    <div id="verbalMetricsContainer">
+                        Cargando métricas verbales...
+                    </div>
                 </div>
-            </div>
 
-            <div class="raw-response">
-                <div class="raw-response-title" id="rawResponseTitle">Respuesta JSON Completa</div>
-                <div class="raw-response-content" id="rawResponseContent"></div>
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">📝 Transcripción fiel</div>
+                        <div class="panel-badge">Texto completo</div>
+                    </div>
+                    <div class="transcription-box" id="transcription">
+                        Cargando transcripción...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">⏱️ Contenido por tiempo</div>
+                        <div class="panel-badge">Lo que dijo el usuario, ordenado</div>
+                    </div>
+                    <div class="timeline-note">Cada bloque muestra tiempo, fragmento y muletillas detectadas.</div>
+                    <div id="transcriptionSegmentsContainer">
+                        Cargando segmentos...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">📊 Evaluación de contenido</div>
+                        <div class="panel-badge">Análisis Gemini</div>
+                    </div>
+                    <div id="evaluationContainer">
+                        Cargando evaluación...
+                    </div>
+                </div>
+
+                <div class="raw-response">
+                    <div class="raw-response-title" id="rawResponseTitle">Respuesta JSON Completa</div>
+                    <div class="raw-response-content" id="rawResponseContent"></div>
+                </div>
             </div>
         </div>
 
@@ -425,7 +645,10 @@
         const error = document.getElementById('error');
         const errorMessage = document.getElementById('errorMessage');
         const results = document.getElementById('results');
+        const videoMetadataContainer = document.getElementById('videoMetadataContainer');
+        const verbalMetricsContainer = document.getElementById('verbalMetricsContainer');
         const transcriptionBox = document.getElementById('transcription');
+        const transcriptionSegmentsContainer = document.getElementById('transcriptionSegmentsContainer');
         const evaluationContainer = document.getElementById('evaluationContainer');
         const rawResponseTitle = document.getElementById('rawResponseTitle');
         const rawResponseContent = document.getElementById('rawResponseContent');
@@ -439,6 +662,8 @@
             youtubeUrlInput.value = '';
             results.classList.remove('show');
             error.classList.remove('show');
+            rawResponseContent.classList.remove('show');
+            rawResponseTitle.classList.remove('expanded');
             youtubeUrlInput.focus();
         });
 
@@ -486,11 +711,90 @@
         }
 
         function displayResults(data) {
+            rawResponseContent.classList.remove('show');
+            rawResponseTitle.classList.remove('expanded');
+
+            const videoMetadata = data?.data?.video_metadata || {};
+            const transcriptSegments = Array.isArray(data?.data?.transcription_segments) ? data.data.transcription_segments : [];
+            const verbalMetrics = data?.data?.verbal_metrics || null;
+
+            videoMetadataContainer.innerHTML = `
+                <div class="video-meta-grid">
+                    <div class="meta-card">
+                        <div class="meta-label">Título</div>
+                        <div class="meta-value">${escapeHtml(videoMetadata.title || 'Sin título detectado')}</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">Canal</div>
+                        <div class="meta-value">${escapeHtml(videoMetadata.channel || 'No disponible')}</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">Duración</div>
+                        <div class="meta-value">${formatDuration(videoMetadata.duration_seconds)}</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">URL</div>
+                        <div class="meta-value muted">${escapeHtml(videoMetadata.webpage_url || youtubeUrlInput.value)}</div>
+                    </div>
+                </div>
+
+                <div class="meta-card" style="margin-top:12px;">
+                    <div class="meta-label">Descripción</div>
+                    <div class="meta-value muted">${escapeHtml(videoMetadata.description || 'Sin descripción disponible')}</div>
+                </div>
+            `;
+
+            if (verbalMetrics) {
+                verbalMetricsContainer.innerHTML = `
+                    <div class="verbal-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Palabras por minuto</div>
+                            <div class="metric-value">${verbalMetrics.palabras_por_minuto ?? 'N/A'}</div>
+                            <div class="metric-note">Ritmo estimado del pitch</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Nivel de velocidad</div>
+                            <div class="metric-value">${verbalMetrics.nivel_velocidad ?? 'N/A'}</div>
+                            <div class="metric-note">Clasificación cualitativa</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Muletillas</div>
+                            <div class="metric-value">${verbalMetrics.cantidad_muletillas ?? 'N/A'}</div>
+                            <div class="metric-note">Conteo aproximado detectado</div>
+                        </div>
+                    </div>
+
+                    <div class="result-section" style="margin-bottom: 0; background: transparent; padding: 0; border-left: none;">
+                        <div class="result-title" style="font-size: 1em; margin-bottom: 10px;">Pausas largas</div>
+                        ${Array.isArray(verbalMetrics.silencios_largos) && verbalMetrics.silencios_largos.length > 0
+                            ? `<ul class="pauses-list">
+                                ${verbalMetrics.silencios_largos.map((pausa, index) => `
+                                    <li>
+                                        Pausa ${index + 1}: inicia en ${pausa.inicio}s y dura ${pausa.duracion_segundos}s
+                                    </li>
+                                `).join('')}
+                            </ul>`
+                            : `<div class="empty-state">No se detectaron pausas largas.</div>`
+                        }
+                    </div>
+                `;
+            } else {
+                verbalMetricsContainer.innerHTML = `
+                    <div class="empty-state">No llegaron métricas verbales en la respuesta del backend.</div>
+                `;
+            }
+
             // Mostrar transcripción
-            transcriptionBox.textContent = data.data.transcription;
+            transcriptionBox.textContent = data?.data?.transcription || 'Sin transcripción disponible';
+
+            transcriptionSegmentsContainer.innerHTML = transcriptSegments.length > 0
+                ? `<div class="transcript-list">
+                    ${transcriptSegments.map((segment) => renderSegment(segment)).join('')}
+                </div>`
+                : `<div class="empty-state">No llegaron segmentos con tiempo desde el backend.</div>`;
 
             // Procesar evaluación de contenido
-            const evaluationText = data.data.content_evaluation;
+            const evaluationText = data?.data?.content_evaluation || '';
 
             // Intentar parsear JSON desde la respuesta
             const jsonMatch = evaluationText.match(/\{[\s\S]*\}/);
@@ -547,6 +851,54 @@
 
             // Mostrar resultados
             results.classList.add('show');
+        }
+
+        function renderSegment(segment) {
+            const fillers = Array.isArray(segment.muletillas_detectadas) ? segment.muletillas_detectadas : [];
+            return `
+                <div class="transcript-item">
+                    <div class="transcript-item-header">
+                        <div class="time-range">${formatTime(segment.inicio)} - ${formatTime(segment.fin)}</div>
+                        <div class="segment-index">Segmento ${segment.indice}</div>
+                    </div>
+                    <div class="segment-text">${escapeHtml(segment.texto || '')}</div>
+                    <div class="filler-badges">
+                        ${fillers.length > 0
+                            ? fillers.map((filler) => `<span class="filler-badge">Muletilla: ${escapeHtml(filler)}</span>`).join('')
+                            : '<span class="filler-badge" style="background:#eef7ee;color:#2d6a2d;">Sin muletillas detectadas</span>'
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatTime(seconds) {
+            if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) {
+                return '0:00';
+            }
+
+            const totalSeconds = Math.max(0, Math.floor(Number(seconds)));
+            const minutes = Math.floor(totalSeconds / 60);
+            const remainingSeconds = totalSeconds % 60;
+            return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        function formatDuration(seconds) {
+            const duration = Number(seconds || 0);
+            if (!duration) {
+                return 'No disponible';
+            }
+
+            return `${duration.toFixed(0)} segundos`;
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
         }
 
         function showError(message) {
