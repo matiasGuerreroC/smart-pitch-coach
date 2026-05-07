@@ -117,6 +117,29 @@
             background: #e0e0e0;
         }
 
+        .btn-step {
+            background: #eef1ff;
+            color: #3f4a8a;
+            border: 1px solid #ccd5ff;
+        }
+
+        .btn-step:hover:not(:disabled) {
+            background: #dfe6ff;
+        }
+
+        .step-controls {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .step-status {
+            margin-top: 12px;
+            color: #555;
+            font-size: 0.92em;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -551,9 +574,11 @@
             </div>
 
             <div class="button-group">
-                <button type="submit" class="btn-primary" id="submitBtn">Analizar Pitch</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Iniciar sesión de análisis</button>
+                <button type="button" class="btn-step" id="continueBtn" disabled>Continuar</button>
                 <button type="button" class="btn-secondary" id="clearBtn">Limpiar</button>
             </div>
+            <div class="step-status" id="stepStatus">Sin sesión activa.</div>
         </form>
 
         <div class="loading" id="loading">
@@ -619,6 +644,16 @@
                     </div>
                 </div>
 
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">🧍 Lenguaje No Verbal</div>
+                        <div class="panel-badge">Video + Gemini 2.5 Flash</div>
+                    </div>
+                    <div id="nonverbalContainer">
+                        Cargando análisis no verbal...
+                    </div>
+                </div>
+
                 <div class="raw-response">
                     <div class="raw-response-title" id="rawResponseTitle">Respuesta JSON Completa</div>
                     <div class="raw-response-content" id="rawResponseContent"></div>
@@ -633,15 +668,17 @@
 
     <script>
         const API_BASE = window.location.origin;
-        const ENDPOINT = `${API_BASE}/api/v1/analyze-pitch`;
+        const START_ENDPOINT = `${API_BASE}/api/v1/analysis/start`;
 
         document.getElementById('apiEndpoint').textContent = API_BASE;
 
         const form = document.getElementById('analyzeForm');
         const youtubeUrlInput = document.getElementById('youtubeUrl');
         const submitBtn = document.getElementById('submitBtn');
+        const continueBtn = document.getElementById('continueBtn');
         const clearBtn = document.getElementById('clearBtn');
         const loading = document.getElementById('loading');
+        const stepStatus = document.getElementById('stepStatus');
         const error = document.getElementById('error');
         const errorMessage = document.getElementById('errorMessage');
         const results = document.getElementById('results');
@@ -650,29 +687,47 @@
         const transcriptionBox = document.getElementById('transcription');
         const transcriptionSegmentsContainer = document.getElementById('transcriptionSegmentsContainer');
         const evaluationContainer = document.getElementById('evaluationContainer');
+        const nonverbalContainer = document.getElementById('nonverbalContainer');
         const rawResponseTitle = document.getElementById('rawResponseTitle');
         const rawResponseContent = document.getElementById('rawResponseContent');
 
+        let currentAnalysisId = null;
+    let currentNextStep = null;
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            await analyzeThePitch();
+            await startAnalysisSession();
         });
 
-        clearBtn.addEventListener('click', () => {
+        clearBtn.addEventListener('click', async () => {
+            if (currentAnalysisId) {
+                try {
+                    await fetch(`${API_BASE}/api/v1/analysis/${currentAnalysisId}`, { method: 'DELETE' });
+                } catch (e) {
+                    // Ignorar limpieza fallida en frontend debug
+                }
+            }
+
+            currentAnalysisId = null;
+            currentNextStep = null;
             youtubeUrlInput.value = '';
             results.classList.remove('show');
             error.classList.remove('show');
             rawResponseContent.classList.remove('show');
             rawResponseTitle.classList.remove('expanded');
+            updateContinueButton();
+            stepStatus.textContent = 'Sin sesión activa.';
             youtubeUrlInput.focus();
         });
+
+        continueBtn.addEventListener('click', async () => runNextStep());
 
         rawResponseTitle.addEventListener('click', () => {
             rawResponseTitle.classList.toggle('expanded');
             rawResponseContent.classList.toggle('show');
         });
 
-        async function analyzeThePitch() {
+        async function startAnalysisSession() {
             const url = youtubeUrlInput.value.trim();
 
             if (!url) {
@@ -687,20 +742,19 @@
             submitBtn.disabled = true;
 
             try {
-                const response = await fetch(ENDPOINT, {
+                const data = await requestApi(START_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ youtube_url: url }),
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || `Error ${response.status}`);
-                }
-
-                const data = await response.json();
+                currentAnalysisId = data.analysis_id || null;
+                currentNextStep = data.next_step || null;
+                stepStatus.textContent = currentNextStep
+                    ? `Sesión activa. Siguiente paso: ${humanizeStep(currentNextStep)}`
+                    : 'Sesión activa. No hay pasos pendientes.';
+                updateContinueButton();
                 displayResults(data);
             } catch (err) {
                 showError(err.message);
@@ -710,6 +764,76 @@
             }
         }
 
+        async function runNextStep() {
+            if (!currentAnalysisId) {
+                showError('No hay sesión activa. Inicia una primero.');
+                return;
+            }
+            if (!currentNextStep) {
+                stepStatus.textContent = 'Todos los pasos ya fueron ejecutados.';
+                updateContinueButton();
+                return;
+            }
+
+            error.classList.remove('show');
+            loading.style.display = 'block';
+
+            try {
+                const data = await requestApi(`${API_BASE}/api/v1/analysis/${currentAnalysisId}/${currentNextStep}`, {
+                    method: 'POST',
+                });
+                currentNextStep = data.next_step || null;
+                updateContinueButton();
+                displayResults(data);
+                stepStatus.textContent = currentNextStep
+                    ? `${data.message}${data.cached ? ' (cache)' : ''}. Siguiente: ${humanizeStep(currentNextStep)}`
+                    : `${data.message}${data.cached ? ' (cache)' : ''}. Flujo completo.`;
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function updateContinueButton() {
+            const hasSession = Boolean(currentAnalysisId);
+            continueBtn.disabled = !hasSession || !currentNextStep;
+            continueBtn.textContent = currentNextStep ? `Continuar: ${humanizeStep(currentNextStep)}` : 'Continuar';
+        }
+
+        function humanizeStep(step) {
+            if (step === 'transcription') return 'Transcripción';
+            if (step === 'verbal-metrics') return 'Métricas Verbales';
+            if (step === 'content') return 'Contenido';
+            if (step === 'nonverbal') return 'Lenguaje No Verbal';
+            return step;
+        }
+
+        async function requestApi(url, options = {}) {
+            const response = await fetch(url, options);
+            const responseText = await response.text();
+            let payload = null;
+
+            try {
+                payload = responseText ? JSON.parse(responseText) : {};
+            } catch (e) {
+                payload = null;
+            }
+
+            if (!response.ok) {
+                if (payload) {
+                    throw new Error(formatApiError(payload, response.status));
+                }
+                throw new Error(responseText || `Error ${response.status}`);
+            }
+
+            if (payload === null) {
+                throw new Error(`Respuesta inválida del servidor (${response.status})`);
+            }
+
+            return payload;
+        }
+
         function displayResults(data) {
             rawResponseContent.classList.remove('show');
             rawResponseTitle.classList.remove('expanded');
@@ -717,6 +841,7 @@
             const videoMetadata = data?.data?.video_metadata || {};
             const transcriptSegments = Array.isArray(data?.data?.transcription_segments) ? data.data.transcription_segments : [];
             const verbalMetrics = data?.data?.verbal_metrics || null;
+            const nonverbalEvaluation = data?.data?.nonverbal_evaluation || null;
 
             videoMetadataContainer.innerHTML = `
                 <div class="video-meta-grid">
@@ -846,6 +971,72 @@
                 `;
             }
 
+            if (nonverbalEvaluation?.available) {
+                const nonverbalText = nonverbalEvaluation.analysis || '';
+                const nonverbalJsonMatch = nonverbalText.match(/\{[\s\S]*\}/);
+                let nonverbalParsed = null;
+
+                if (nonverbalJsonMatch) {
+                    try {
+                        nonverbalParsed = JSON.parse(nonverbalJsonMatch[0]);
+                    } catch (e) {
+                        nonverbalParsed = null;
+                    }
+                }
+
+                if (nonverbalParsed) {
+                    nonverbalContainer.innerHTML = `
+                        <div class="score-badge">${nonverbalParsed.puntaje_global || 'N/A'}/100</div>
+
+                        <div class="points-list">
+                            <h4>✅ Fortalezas</h4>
+                            <ul>
+                                ${(nonverbalParsed.fortalezas || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="points-list">
+                            <h4>⚠️ Debilidades</h4>
+                            <ul>
+                                ${(nonverbalParsed.debilidades || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Postura</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.postura || 'Sin información')}</div>
+                        </div>
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Contacto visual</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.contacto_visual || 'Sin información')}</div>
+                        </div>
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Uso de manos</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.uso_manos || 'Sin información')}</div>
+                        </div>
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Expresión facial</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.expresion_facial || 'Sin información')}</div>
+                        </div>
+
+                        <div class="recommendation-box">
+                            <h4>💡 Recomendación</h4>
+                            <p>${escapeHtml(nonverbalParsed.recomendacion || 'Sin recomendación disponible')}</p>
+                        </div>
+                    `;
+                } else {
+                    nonverbalContainer.innerHTML = `
+                        <div class="evaluation-box">${escapeHtml(nonverbalText || 'No se pudo estructurar el análisis no verbal')}</div>
+                    `;
+                }
+            } else if (nonverbalEvaluation && nonverbalEvaluation.available === false) {
+                nonverbalContainer.innerHTML = `
+                    <div class="empty-state">${escapeHtml(nonverbalEvaluation.reason || 'El análisis no verbal no estuvo disponible')}</div>
+                `;
+            } else {
+                nonverbalContainer.innerHTML = `<div class="empty-state">No llegó análisis no verbal desde el backend.</div>`;
+            }
+
             // Mostrar respuesta JSON cruda
             rawResponseContent.textContent = JSON.stringify(data, null, 2);
 
@@ -904,6 +1095,29 @@
         function showError(message) {
             errorMessage.textContent = message;
             error.classList.add('show');
+        }
+
+        function formatApiError(errorData, status) {
+            const detail = errorData?.detail;
+            if (typeof detail === 'string') {
+                return detail;
+            }
+            if (Array.isArray(detail)) {
+                return detail
+                    .map((item) => {
+                        const location = Array.isArray(item?.loc) ? item.loc.join('.') : 'body';
+                        return `${location}: ${item?.msg || 'Error de validación'}`;
+                    })
+                    .join(' | ');
+            }
+            if (detail && typeof detail === 'object') {
+                try {
+                    return JSON.stringify(detail);
+                } catch (e) {
+                    return `Error ${status}`;
+                }
+            }
+            return `Error ${status}`;
         }
 
         // Focus en el input al cargar
