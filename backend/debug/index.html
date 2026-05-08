@@ -174,6 +174,37 @@
             border-top: 2px solid #f0f0f0;
         }
 
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin: 18px 0 6px 0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 8px 14px;
+            background: #f6f7ff;
+            color: #333;
+            border-radius: 999px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-weight: 700;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: rgba(0,0,0,0.06);
+        }
+
+        .tab-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
         .results.show {
             display: block;
             animation: slideIn 0.3s ease;
@@ -575,11 +606,27 @@
 
             <div class="button-group">
                 <button type="submit" class="btn-primary" id="submitBtn">Iniciar sesión de análisis</button>
-                <button type="button" class="btn-step" id="continueBtn" disabled>Continuar</button>
+                <button type="button" class="btn-step" id="continueBtn" disabled style="display:none">Continuar</button>
                 <button type="button" class="btn-secondary" id="clearBtn">Limpiar</button>
             </div>
             <div class="step-status" id="stepStatus">Sin sesión activa.</div>
         </form>
+
+        <!-- Tabs: seleccionar sección a mostrar/accionar -->
+        <div class="tabs" id="tabs">
+            <div class="tab active" data-tab="video">🎬 Video</div>
+            <div class="tab" data-tab="transcription">📝 Transcripción</div>
+            <div class="tab" data-tab="verbal">🎙️ Métricas Verbales</div>
+            <div class="tab" data-tab="content">📊 Contenido</div>
+            <div class="tab" data-tab="nonverbal">🧍 No Verbal</div>
+        </div>
+
+        <div class="tab-actions">
+            <button id="tabActionBtn" class="btn-primary" disabled>Ejecutar</button>
+            <button id="tabRefreshBtn" class="btn-secondary">Refrescar estado</button>
+            <div style="flex:1"></div>
+            <div id="tabInfo" style="color:#666; font-weight:600"></div>
+        </div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
@@ -693,6 +740,8 @@
 
         let currentAnalysisId = null;
     let currentNextStep = null;
+    let currentData = null; // última respuesta del backend (estado de la sesión)
+    let activeTab = 'video';
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -710,12 +759,14 @@
 
             currentAnalysisId = null;
             currentNextStep = null;
+            currentData = null;
             youtubeUrlInput.value = '';
             results.classList.remove('show');
             error.classList.remove('show');
             rawResponseContent.classList.remove('show');
             rawResponseTitle.classList.remove('expanded');
             updateContinueButton();
+            updateTabActionButton();
             stepStatus.textContent = 'Sin sesión activa.';
             youtubeUrlInput.focus();
         });
@@ -726,6 +777,110 @@
             rawResponseTitle.classList.toggle('expanded');
             rawResponseContent.classList.toggle('show');
         });
+
+        // Inicializar pestañas
+        const tabs = Array.from(document.querySelectorAll('.tab'));
+        const tabActionBtn = document.getElementById('tabActionBtn');
+        const tabRefreshBtn = document.getElementById('tabRefreshBtn');
+        const tabInfo = document.getElementById('tabInfo');
+
+        tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+        tabActionBtn.addEventListener('click', () => runTabAction());
+        tabRefreshBtn.addEventListener('click', () => refreshSessionState());
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+            updateTabActionButton();
+            // Mostrar información contextual breve
+            tabInfo.textContent = {
+                video: 'Metadatos y descripción del video',
+                transcription: 'Transcribir audio a texto (Whisper)',
+                verbal: 'Calcular métricas verbales: velocidad, pausas, muletillas',
+                content: 'Evaluación de contenido (Gemini)',
+                nonverbal: 'Análisis no verbal sobre frames de video (Gemini)'
+            }[tabId] || '';
+        }
+
+        function updateTabActionButton() {
+            const hasSession = Boolean(currentAnalysisId);
+            tabActionBtn.disabled = !hasSession;
+            if (!hasSession) {
+                tabActionBtn.textContent = 'Ejecutar (inicia sesión primero)';
+                return;
+            }
+
+            // Deshabilitar si ya hay datos para esa sección (cache local)
+            const data = currentData?.data || {};
+            if (activeTab === 'video') {
+                tabActionBtn.textContent = 'Refrescar metadatos';
+            } else if (activeTab === 'transcription') {
+                tabActionBtn.textContent = data.transcription ? 'Transcripción (ya ejecutada)' : 'Ejecutar transcripción';
+                tabActionBtn.disabled = !!data.transcription;
+            } else if (activeTab === 'verbal') {
+                tabActionBtn.textContent = data.verbal_metrics ? 'Métricas verbales (ya ejecutado)' : 'Calcular métricas verbales';
+                tabActionBtn.disabled = !!data.verbal_metrics;
+            } else if (activeTab === 'content') {
+                tabActionBtn.textContent = data.content_evaluation ? 'Evaluación de contenido (ya ejecutada)' : 'Evaluar contenido';
+                tabActionBtn.disabled = !!data.content_evaluation;
+            } else if (activeTab === 'nonverbal') {
+                const nv = data.nonverbal_evaluation;
+                const available = nv && (nv.available === true);
+                tabActionBtn.textContent = available ? 'Análisis no verbal (ya ejecutado)' : 'Analizar no verbal';
+                tabActionBtn.disabled = !!available;
+            }
+        }
+
+        async function runTabAction() {
+            if (!currentAnalysisId) {
+                showError('No hay sesión activa. Inicia una primero.');
+                return;
+            }
+
+            let endpoint = null;
+            if (activeTab === 'video') {
+                await refreshSessionState();
+                return;
+            }
+            if (activeTab === 'transcription') endpoint = 'transcription';
+            if (activeTab === 'verbal') endpoint = 'verbal-metrics';
+            if (activeTab === 'content') endpoint = 'content';
+            if (activeTab === 'nonverbal') endpoint = 'nonverbal';
+
+            if (!endpoint) return;
+
+            loading.style.display = 'block';
+            try {
+                const data = await requestApi(`${API_BASE}/api/v1/analysis/${currentAnalysisId}/${endpoint}`, { method: 'POST' });
+                currentData = data;
+                displayResults(data);
+                stepStatus.textContent = data.next_step ? `Siguiente: ${humanizeStep(data.next_step)}` : 'Sesión actualizada.';
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                updateTabActionButton();
+            }
+        }
+
+        async function refreshSessionState() {
+            if (!currentAnalysisId) {
+                showError('No hay sesión activa.');
+                return;
+            }
+            loading.style.display = 'block';
+            try {
+                const data = await requestApi(`${API_BASE}/api/v1/analysis/${currentAnalysisId}`, { method: 'GET' });
+                currentData = data;
+                displayResults(data);
+                stepStatus.textContent = data.next_step ? `Siguiente: ${humanizeStep(data.next_step)}` : 'Sesión actualizada.';
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                updateTabActionButton();
+            }
+        }
 
         async function startAnalysisSession() {
             const url = youtubeUrlInput.value.trim();
@@ -751,10 +906,12 @@
                 });
                 currentAnalysisId = data.analysis_id || null;
                 currentNextStep = data.next_step || null;
+                currentData = data;
                 stepStatus.textContent = currentNextStep
                     ? `Sesión activa. Siguiente paso: ${humanizeStep(currentNextStep)}`
                     : 'Sesión activa. No hay pasos pendientes.';
                 updateContinueButton();
+                updateTabActionButton();
                 displayResults(data);
             } catch (err) {
                 showError(err.message);
@@ -783,6 +940,7 @@
                     method: 'POST',
                 });
                 currentNextStep = data.next_step || null;
+                currentData = data;
                 updateContinueButton();
                 displayResults(data);
                 stepStatus.textContent = currentNextStep
@@ -1041,6 +1199,8 @@
             rawResponseContent.textContent = JSON.stringify(data, null, 2);
 
             // Mostrar resultados
+            currentData = data;
+            updateTabActionButton();
             results.classList.add('show');
         }
 
@@ -1122,6 +1282,8 @@
 
         // Focus en el input al cargar
         youtubeUrlInput.focus();
+        // Inicializar pestaña por defecto
+        switchTab(activeTab);
     </script>
 </body>
 </html>
