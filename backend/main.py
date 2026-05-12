@@ -5,7 +5,7 @@ import subprocess
 import uuid
 from datetime import datetime
 from typing import Any, Dict
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
@@ -472,6 +472,42 @@ def download_video_from_youtube(url: str, output_filename: str = "temp_video") -
         raise Exception(f"Error descargando video: {str(e)}")
 
 
+def extract_audio_from_video(video_path: str, output_filename: str = "temp_audio") -> str:
+    """Extrae el audio del video local a WAV (pcm_s16le) usando ffmpeg."""
+    out_path = f"{output_filename}.wav"
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(video_path),
+        "-vn",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-acodec",
+        "pcm_s16le",
+        out_path,
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"Error extrayendo audio del video: {result.stderr.strip()}")
+    return out_path
+
+
+def get_video_duration_seconds(video_path: str) -> float:
+    try:
+        cap = cv2.VideoCapture(str(video_path))
+        if not cap.isOpened():
+            return 0.0
+        fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
+        total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0.0
+        cap.release()
+        return (total_frames / fps) if fps else 0.0
+    except Exception:
+        return 0.0
+
+
 def sample_video_frames(video_path: str, max_frames: int = 6, max_seconds: int = 30):
     capture = cv2.VideoCapture(video_path)
     if not capture.isOpened():
@@ -704,3 +740,72 @@ async def analyze_pitch(request: PitchRequest):
             os.remove(raw_audio_path)
         if raw_video_path and os.path.exists(raw_video_path):
             os.remove(raw_video_path)
+
+
+@app.post("/api/v1/analysis/upload")
+async def start_analysis_upload(file: UploadFile = File(...)):
+    """Crear una sesión de análisis a partir de un video subido localmente."""
+    analysis_id = str(uuid.uuid4())
+    suffix = Path(file.filename).suffix or ".mp4"
+    raw_video_name = f"temp_video_{analysis_id}{suffix}"
+    raw_audio_name = f"temp_audio_{analysis_id}.wav"
+
+    raw_video_path = str(BASE_DIR / raw_video_name)
+    raw_audio_path = None
+    audio_path = None
+
+    try:
+        # Guardar archivo subido en disco
+        with open(raw_video_path, "wb") as out_f:
+            content = await file.read()
+            out_f.write(content)
+
+        # Extraer audio y normalizar para Whisper
+        raw_audio_path = extract_audio_from_video(raw_video_path, output_filename=str(BASE_DIR / f"temp_audio_{analysis_id}"))
+        audio_path = normalize_audio_for_whisper(raw_audio_path)
+
+        # Construir metadata básica
+        duration = get_video_duration_seconds(raw_video_path)
+        video_metadata = {
+            "title": file.filename,
+            "description": "Archivo subido localmente",
+            "channel": "local",
+            "duration_seconds": round(duration, 2),
+            "webpage_url": f"local://{file.filename}",
+        }
+
+        session = {
+            "analysis_id": analysis_id,
+            "youtube_url": f"local://{file.filename}",
+            "created_at": datetime.utcnow().isoformat(),
+            "raw_audio_path": raw_audio_path,
+            "audio_path": audio_path,
+            "raw_video_path": raw_video_path,
+            "video_metadata": video_metadata,
+            "transcription": None,
+            "transcription_segments": [],
+            "transcription_words": [],
+            "verbal_metrics": None,
+            "content_evaluation": None,
+            "nonverbal_evaluation": None,
+            "steps": {
+                "prepared": True,
+                "transcription": False,
+                "verbal_metrics": False,
+                "content": False,
+                "nonverbal": False,
+            },
+        }
+
+        ANALYSIS_SESSIONS[analysis_id] = session
+        return _build_step_response(session, "Sesión creada desde archivo local. Ejecuta los pasos manualmente.")
+
+    except Exception as e:
+        # Intentar eliminar archivos si algo falla
+        if raw_audio_path and os.path.exists(raw_audio_path):
+            os.remove(raw_audio_path)
+        if audio_path and os.path.exists(audio_path):
+            os.remove(audio_path)
+        if raw_video_path and os.path.exists(raw_video_path):
+            os.remove(raw_video_path)
+        raise HTTPException(status_code=500, detail=str(e))

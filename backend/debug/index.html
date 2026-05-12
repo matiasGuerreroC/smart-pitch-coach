@@ -604,8 +604,14 @@
                 />
             </div>
 
+            <div class="form-group">
+                <label for="videoFileInput">Subir video local</label>
+                <input type="file" id="videoFileInput" accept="video/*" />
+            </div>
+
             <div class="button-group">
                 <button type="submit" class="btn-primary" id="submitBtn">Iniciar sesión de análisis</button>
+                <button type="button" class="btn-primary" id="uploadBtn">Subir video</button>
                 <button type="button" class="btn-step" id="continueBtn" disabled style="display:none">Continuar</button>
                 <button type="button" class="btn-secondary" id="clearBtn">Limpiar</button>
             </div>
@@ -721,6 +727,8 @@
 
         const form = document.getElementById('analyzeForm');
         const youtubeUrlInput = document.getElementById('youtubeUrl');
+        const fileInput = document.getElementById('videoFileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
         const submitBtn = document.getElementById('submitBtn');
         const continueBtn = document.getElementById('continueBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -776,6 +784,11 @@
         rawResponseTitle.addEventListener('click', () => {
             rawResponseTitle.classList.toggle('expanded');
             rawResponseContent.classList.toggle('show');
+        });
+
+        // Upload handler
+        uploadBtn.addEventListener('click', async () => {
+            await uploadVideo();
         });
 
         // Inicializar pestañas
@@ -918,6 +931,56 @@
             } finally {
                 loading.style.display = 'none';
                 submitBtn.disabled = false;
+            }
+        }
+
+        async function uploadVideo() {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                showError('Selecciona un archivo de video antes de subir.');
+                return;
+            }
+
+            // Reset UI
+            error.classList.remove('show');
+            results.classList.remove('show');
+            loading.style.display = 'block';
+            uploadBtn.disabled = true;
+            fileInput.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file, file.name);
+
+                const response = await fetch(`${API_BASE}/api/v1/analysis/upload`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const text = await response.text();
+                let payload = null;
+                try { payload = text ? JSON.parse(text) : {}; } catch (e) { payload = null; }
+
+                if (!response.ok) {
+                    if (payload) throw new Error(formatApiError(payload, response.status));
+                    throw new Error(text || `Error ${response.status}`);
+                }
+
+                const data = payload;
+                currentAnalysisId = data.analysis_id || null;
+                currentNextStep = data.next_step || null;
+                currentData = data;
+                stepStatus.textContent = currentNextStep
+                    ? `Sesión activa. Siguiente paso: ${humanizeStep(currentNextStep)}`
+                    : 'Sesión activa. No hay pasos pendientes.';
+                updateTabActionButton();
+                displayResults(data);
+            } catch (err) {
+                showError(err.message || String(err));
+            } finally {
+                loading.style.display = 'none';
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
             }
         }
 
