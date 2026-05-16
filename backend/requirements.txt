@@ -1,4 +1,8 @@
 fastapi
 uvicorn
 groq
+google-generativeai
 python-dotenv
+yt-dlp
+opencv-python
+Pillow

@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Frontend - AIPitch Backend</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-step {
+            background: #eef1ff;
+            color: #3f4a8a;
+            border: 1px solid #ccd5ff;
+        }
+
+        .btn-step:hover:not(:disabled) {
+            background: #dfe6ff;
+        }
+
+        .step-controls {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .step-status {
+            margin-top: 12px;
+            color: #555;
+            font-size: 0.92em;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .results {
+            display: none;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin: 18px 0 6px 0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 8px 14px;
+            background: #f6f7ff;
+            color: #333;
+            border-radius: 999px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-weight: 700;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: rgba(0,0,0,0.06);
+        }
+
+        .tab-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .panel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #eef1ff;
+            color: #667eea;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+
+        .video-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .meta-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .meta-label {
+            font-size: 0.78em;
+            color: #667eea;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .meta-value {
+            color: #222;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .meta-value.muted {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .transcript-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .transcript-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .transcript-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .time-range {
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        .segment-index {
+            font-size: 0.8em;
+            color: #888;
+            font-weight: 700;
+        }
+
+        .segment-text {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .filler-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filler-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #fff3cd;
+            color: #8a6400;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+
+        .timeline-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-section {
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .transcription-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .evaluation-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .verbal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+        }
+
+        .metric-label {
+            font-size: 0.82em;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: 800;
+            color: #222;
+        }
+
+        .metric-note {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .pauses-list {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+
+        .pauses-list li {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .empty-state {
+            background: #fff;
+            border: 1px dashed #d0d0d0;
+            border-radius: 8px;
+            padding: 14px;
+            color: #777;
+        }
+
+        .score-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .points-list {
+            margin: 15px 0;
+        }
+
+        .points-list h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .points-list ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .points-list li {
+            color: #555;
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .points-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .recommendation-box {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .recommendation-box h4 {
+            color: #c9960e;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .recommendation-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .error {
+            display: none;
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .raw-response {
+            margin-top: 20px;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .raw-response-title {
+            font-weight: 700;
+            color: #666;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .raw-response-title:before {
+            content: "▶ ";
+            transition: transform 0.3s ease;
+        }
+
+        .raw-response-title.expanded:before {
+            content: "▼ ";
+            transform: rotate(0deg);
+        }
+
+        .raw-response-content {
+            display: none;
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .raw-response-content.show {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤 AIPitch Debug Frontend</h1>
+            <p class="subtitle">Prueba tu backend de análisis de pitches en tiempo real</p>
+        </header>
+
+        <form id="analyzeForm">
+            <div class="form-group">
+                <label for="youtubeUrl">URL de YouTube</label>
+                <input
+                    type="text"
+                    id="youtubeUrl"
+                    placeholder="Ej: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="videoFileInput">Subir video local</label>
+                <input type="file" id="videoFileInput" accept="video/*" />
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-primary" id="submitBtn">Iniciar sesión de análisis</button>
+                <button type="button" class="btn-primary" id="uploadBtn">Subir video</button>
+                <button type="button" class="btn-step" id="continueBtn" disabled style="display:none">Continuar</button>
+                <button type="button" class="btn-secondary" id="clearBtn">Limpiar</button>
+            </div>
+            <div class="step-status" id="stepStatus">Sin sesión activa.</div>
+        </form>
+
+        <!-- Tabs: seleccionar sección a mostrar/accionar -->
+        <div class="tabs" id="tabs">
+            <div class="tab active" data-tab="video">🎬 Video</div>
+            <div class="tab" data-tab="transcription">📝 Transcripción</div>
+            <div class="tab" data-tab="verbal">🎙️ Métricas Verbales</div>
+            <div class="tab" data-tab="content">📊 Contenido</div>
+            <div class="tab" data-tab="nonverbal">🧍 No Verbal</div>
+        </div>
+
+        <div class="tab-actions">
+            <button id="tabActionBtn" class="btn-primary" disabled>Ejecutar</button>
+            <button id="tabRefreshBtn" class="btn-secondary">Refrescar estado</button>
+            <div style="flex:1"></div>
+            <div id="tabInfo" style="color:#666; font-weight:600"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Procesando pitch... por favor espera</p>
+        </div>
+
+        <div class="error" id="error">
+            <div class="error-title">Error</div>
+            <div id="errorMessage"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-grid">
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">🎬 Información del video</div>
+                        <div class="panel-badge">Metadatos de YouTube</div>
+                    </div>
+                    <div id="videoMetadataContainer">
+                        Cargando información del video...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">🎙️ Métricas verbales</div>
+                        <div class="panel-badge">Velocidad, pausas y muletillas</div>
+                    </div>
+                    <div id="verbalMetricsContainer">
+                        Cargando métricas verbales...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">📝 Transcripción fiel</div>
+                        <div class="panel-badge">Texto completo</div>
+                    </div>
+                    <div class="transcription-box" id="transcription">
+                        Cargando transcripción...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">⏱️ Contenido por tiempo</div>
+                        <div class="panel-badge">Lo que dijo el usuario, ordenado</div>
+                    </div>
+                    <div class="timeline-note">Cada bloque muestra tiempo, fragmento y muletillas detectadas.</div>
+                    <div id="transcriptionSegmentsContainer">
+                        Cargando segmentos...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">📊 Evaluación de contenido</div>
+                        <div class="panel-badge">Análisis Gemini</div>
+                    </div>
+                    <div id="evaluationContainer">
+                        Cargando evaluación...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="panel-header">
+                        <div class="result-title">🧍 Lenguaje No Verbal</div>
+                        <div class="panel-badge">Video + Gemini 2.5 Flash</div>
+                    </div>
+                    <div id="nonverbalContainer">
+                        Cargando análisis no verbal...
+                    </div>
+                </div>
+
+                <div class="raw-response">
+                    <div class="raw-response-title" id="rawResponseTitle">Respuesta JSON Completa</div>
+                    <div class="raw-response-content" id="rawResponseContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🔧 Debug Frontend | API: <span id="apiEndpoint">http://localhost:8000</span></p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const START_ENDPOINT = `${API_BASE}/api/v1/analysis/start`;
+
+        document.getElementById('apiEndpoint').textContent = API_BASE;
+
+        const form = document.getElementById('analyzeForm');
+        const youtubeUrlInput = document.getElementById('youtubeUrl');
+        const fileInput = document.getElementById('videoFileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const continueBtn = document.getElementById('continueBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loading = document.getElementById('loading');
+        const stepStatus = document.getElementById('stepStatus');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const results = document.getElementById('results');
+        const videoMetadataContainer = document.getElementById('videoMetadataContainer');
+        const verbalMetricsContainer = document.getElementById('verbalMetricsContainer');
+        const transcriptionBox = document.getElementById('transcription');
+        const transcriptionSegmentsContainer = document.getElementById('transcriptionSegmentsContainer');
+        const evaluationContainer = document.getElementById('evaluationContainer');
+        const nonverbalContainer = document.getElementById('nonverbalContainer');
+        const rawResponseTitle = document.getElementById('rawResponseTitle');
+        const rawResponseContent = document.getElementById('rawResponseContent');
+
+        let currentAnalysisId = null;
+    let currentNextStep = null;
+    let currentData = null; // última respuesta del backend (estado de la sesión)
+    let activeTab = 'video';
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await startAnalysisSession();
+        });
+
+        clearBtn.addEventListener('click', async () => {
+            if (currentAnalysisId) {
+                try {
+                    await fetch(`${API_BASE}/api/v1/analysis/${currentAnalysisId}`, { method: 'DELETE' });
+                } catch (e) {
+                    // Ignorar limpieza fallida en frontend debug
+                }
+            }
+
+            currentAnalysisId = null;
+            currentNextStep = null;
+            currentData = null;
+            youtubeUrlInput.value = '';
+            results.classList.remove('show');
+            error.classList.remove('show');
+            rawResponseContent.classList.remove('show');
+            rawResponseTitle.classList.remove('expanded');
+            updateContinueButton();
+            updateTabActionButton();
+            stepStatus.textContent = 'Sin sesión activa.';
+            youtubeUrlInput.focus();
+        });
+
+        continueBtn.addEventListener('click', async () => runNextStep());
+
+        rawResponseTitle.addEventListener('click', () => {
+            rawResponseTitle.classList.toggle('expanded');
+            rawResponseContent.classList.toggle('show');
+        });
+
+        // Upload handler
+        uploadBtn.addEventListener('click', async () => {
+            await uploadVideo();
+        });
+
+        // Inicializar pestañas
+        const tabs = Array.from(document.querySelectorAll('.tab'));
+        const tabActionBtn = document.getElementById('tabActionBtn');
+        const tabRefreshBtn = document.getElementById('tabRefreshBtn');
+        const tabInfo = document.getElementById('tabInfo');
+
+        tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+        tabActionBtn.addEventListener('click', () => runTabAction());
+        tabRefreshBtn.addEventListener('click', () => refreshSessionState());
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+            updateTabActionButton();
+            // Mostrar información contextual breve
+            tabInfo.textContent = {
+                video: 'Metadatos y descripción del video',
+                transcription: 'Transcribir audio a texto (Whisper)',
+                verbal: 'Calcular métricas verbales: velocidad, pausas, muletillas',
+                content: 'Evaluación de contenido (Gemini)',
+                nonverbal: 'Análisis no verbal sobre frames de video (Gemini)'
+            }[tabId] || '';
+        }
+
+        function updateTabActionButton() {
+            const hasSession = Boolean(currentAnalysisId);
+            tabActionBtn.disabled = !hasSession;
+            if (!hasSession) {
+                tabActionBtn.textContent = 'Ejecutar (inicia sesión primero)';
+                return;
+            }
+
+            // Deshabilitar si ya hay datos para esa sección (cache local)
+            const data = currentData?.data || {};
+            if (activeTab === 'video') {
+                tabActionBtn.textContent = 'Refrescar metadatos';
+            } else if (activeTab === 'transcription') {
+                tabActionBtn.textContent = data.transcription ? 'Transcripción (ya ejecutada)' : 'Ejecutar transcripción';
+                tabActionBtn.disabled = !!data.transcription;
+            } else if (activeTab === 'verbal') {
+                tabActionBtn.textContent = data.verbal_metrics ? 'Métricas verbales (ya ejecutado)' : 'Calcular métricas verbales';
+                tabActionBtn.disabled = !!data.verbal_metrics;
+            } else if (activeTab === 'content') {
+                tabActionBtn.textContent = data.content_evaluation ? 'Evaluación de contenido (ya ejecutada)' : 'Evaluar contenido';
+                tabActionBtn.disabled = !!data.content_evaluation;
+            } else if (activeTab === 'nonverbal') {
+                const nv = data.nonverbal_evaluation;
+                const available = nv && (nv.available === true);
+                tabActionBtn.textContent = available ? 'Análisis no verbal (ya ejecutado)' : 'Analizar no verbal';
+                tabActionBtn.disabled = !!available;
+            }
+        }
+
+        async function runTabAction() {
+            if (!currentAnalysisId) {
+                showError('No hay sesión activa. Inicia una primero.');
+                return;
+            }
+
+            let endpoint = null;
+            if (activeTab === 'video') {
+                await refreshSessionState();
+                return;
+            }
+            if (activeTab === 'transcription') endpoint = 'transcription';
+            if (activeTab === 'verbal') endpoint = 'verbal-metrics';
+            if (activeTab === 'content') endpoint = 'content';
+            if (activeTab === 'nonverbal') endpoint = 'nonverbal';
+
+            if (!endpoint) return;
+
+            loading.style.display = 'block';
+            try {
+                const data = await requestApi(`${API_BASE}/api/v1/analysis/${currentAnalysisId}/${endpoint}`, { method: 'POST' });
+                currentData = data;
+                displayResults(data);
+                stepStatus.textContent = data.next_step ? `Siguiente: ${humanizeStep(data.next_step)}` : 'Sesión actualizada.';
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                updateTabActionButton();
+            }
+        }
+
+        async function refreshSessionState() {
+            if (!currentAnalysisId) {
+                showError('No hay sesión activa.');
+                return;
+            }
+            loading.style.display = 'block';
+            try {
+                const data = await requestApi(`${API_BASE}/api/v1/analysis/${currentAnalysisId}`, { method: 'GET' });
+                currentData = data;
+                displayResults(data);
+                stepStatus.textContent = data.next_step ? `Siguiente: ${humanizeStep(data.next_step)}` : 'Sesión actualizada.';
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                updateTabActionButton();
+            }
+        }
+
+        async function startAnalysisSession() {
+            const url = youtubeUrlInput.value.trim();
+
+            if (!url) {
+                showError('Por favor ingresa una URL de YouTube válida');
+                return;
+            }
+
+            // Reset UI
+            error.classList.remove('show');
+            results.classList.remove('show');
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const data = await requestApi(START_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ youtube_url: url }),
+                });
+                currentAnalysisId = data.analysis_id || null;
+                currentNextStep = data.next_step || null;
+                currentData = data;
+                stepStatus.textContent = currentNextStep
+                    ? `Sesión activa. Siguiente paso: ${humanizeStep(currentNextStep)}`
+                    : 'Sesión activa. No hay pasos pendientes.';
+                updateContinueButton();
+                updateTabActionButton();
+                displayResults(data);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function uploadVideo() {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                showError('Selecciona un archivo de video antes de subir.');
+                return;
+            }
+
+            // Reset UI
+            error.classList.remove('show');
+            results.classList.remove('show');
+            loading.style.display = 'block';
+            uploadBtn.disabled = true;
+            fileInput.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file, file.name);
+
+                const response = await fetch(`${API_BASE}/api/v1/analysis/upload`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const text = await response.text();
+                let payload = null;
+                try { payload = text ? JSON.parse(text) : {}; } catch (e) { payload = null; }
+
+                if (!response.ok) {
+                    if (payload) throw new Error(formatApiError(payload, response.status));
+                    throw new Error(text || `Error ${response.status}`);
+                }
+
+                const data = payload;
+                currentAnalysisId = data.analysis_id || null;
+                currentNextStep = data.next_step || null;
+                currentData = data;
+                stepStatus.textContent = currentNextStep
+                    ? `Sesión activa. Siguiente paso: ${humanizeStep(currentNextStep)}`
+                    : 'Sesión activa. No hay pasos pendientes.';
+                updateTabActionButton();
+                displayResults(data);
+            } catch (err) {
+                showError(err.message || String(err));
+            } finally {
+                loading.style.display = 'none';
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+            }
+        }
+
+        async function runNextStep() {
+            if (!currentAnalysisId) {
+                showError('No hay sesión activa. Inicia una primero.');
+                return;
+            }
+            if (!currentNextStep) {
+                stepStatus.textContent = 'Todos los pasos ya fueron ejecutados.';
+                updateContinueButton();
+                return;
+            }
+
+            error.classList.remove('show');
+            loading.style.display = 'block';
+
+            try {
+                const data = await requestApi(`${API_BASE}/api/v1/analysis/${currentAnalysisId}/${currentNextStep}`, {
+                    method: 'POST',
+                });
+                currentNextStep = data.next_step || null;
+                currentData = data;
+                updateContinueButton();
+                displayResults(data);
+                stepStatus.textContent = currentNextStep
+                    ? `${data.message}${data.cached ? ' (cache)' : ''}. Siguiente: ${humanizeStep(currentNextStep)}`
+                    : `${data.message}${data.cached ? ' (cache)' : ''}. Flujo completo.`;
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function updateContinueButton() {
+            const hasSession = Boolean(currentAnalysisId);
+            continueBtn.disabled = !hasSession || !currentNextStep;
+            continueBtn.textContent = currentNextStep ? `Continuar: ${humanizeStep(currentNextStep)}` : 'Continuar';
+        }
+
+        function humanizeStep(step) {
+            if (step === 'transcription') return 'Transcripción';
+            if (step === 'verbal-metrics') return 'Métricas Verbales';
+            if (step === 'content') return 'Contenido';
+            if (step === 'nonverbal') return 'Lenguaje No Verbal';
+            return step;
+        }
+
+        async function requestApi(url, options = {}) {
+            const response = await fetch(url, options);
+            const responseText = await response.text();
+            let payload = null;
+
+            try {
+                payload = responseText ? JSON.parse(responseText) : {};
+            } catch (e) {
+                payload = null;
+            }
+
+            if (!response.ok) {
+                if (payload) {
+                    throw new Error(formatApiError(payload, response.status));
+                }
+                throw new Error(responseText || `Error ${response.status}`);
+            }
+
+            if (payload === null) {
+                throw new Error(`Respuesta inválida del servidor (${response.status})`);
+            }
+
+            return payload;
+        }
+
+        function displayResults(data) {
+            rawResponseContent.classList.remove('show');
+            rawResponseTitle.classList.remove('expanded');
+
+            const videoMetadata = data?.data?.video_metadata || {};
+            const transcriptSegments = Array.isArray(data?.data?.transcription_segments) ? data.data.transcription_segments : [];
+            const verbalMetrics = data?.data?.verbal_metrics || null;
+            const nonverbalEvaluation = data?.data?.nonverbal_evaluation || null;
+
+            videoMetadataContainer.innerHTML = `
+                <div class="video-meta-grid">
+                    <div class="meta-card">
+                        <div class="meta-label">Título</div>
+                        <div class="meta-value">${escapeHtml(videoMetadata.title || 'Sin título detectado')}</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">Canal</div>
+                        <div class="meta-value">${escapeHtml(videoMetadata.channel || 'No disponible')}</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">Duración</div>
+                        <div class="meta-value">${formatDuration(videoMetadata.duration_seconds)}</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">URL</div>
+                        <div class="meta-value muted">${escapeHtml(videoMetadata.webpage_url || youtubeUrlInput.value)}</div>
+                    </div>
+                </div>
+
+                <div class="meta-card" style="margin-top:12px;">
+                    <div class="meta-label">Descripción</div>
+                    <div class="meta-value muted">${escapeHtml(videoMetadata.description || 'Sin descripción disponible')}</div>
+                </div>
+            `;
+
+            if (verbalMetrics) {
+                verbalMetricsContainer.innerHTML = `
+                    <div class="verbal-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Palabras por minuto</div>
+                            <div class="metric-value">${verbalMetrics.palabras_por_minuto ?? 'N/A'}</div>
+                            <div class="metric-note">Ritmo estimado del pitch</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Nivel de velocidad</div>
+                            <div class="metric-value">${verbalMetrics.nivel_velocidad ?? 'N/A'}</div>
+                            <div class="metric-note">Clasificación cualitativa</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Muletillas</div>
+                            <div class="metric-value">${verbalMetrics.cantidad_muletillas ?? 'N/A'}</div>
+                            <div class="metric-note">Conteo aproximado detectado</div>
+                        </div>
+                    </div>
+
+                    <div class="result-section" style="margin-bottom: 0; background: transparent; padding: 0; border-left: none;">
+                        <div class="result-title" style="font-size: 1em; margin-bottom: 10px;">Pausas largas</div>
+                        ${Array.isArray(verbalMetrics.silencios_largos) && verbalMetrics.silencios_largos.length > 0
+                            ? `<ul class="pauses-list">
+                                ${verbalMetrics.silencios_largos.map((pausa, index) => `
+                                    <li>
+                                        Pausa ${index + 1}: inicia en ${pausa.inicio}s y dura ${pausa.duracion_segundos}s
+                                    </li>
+                                `).join('')}
+                            </ul>`
+                            : `<div class="empty-state">No se detectaron pausas largas.</div>`
+                        }
+                    </div>
+                `;
+            } else {
+                verbalMetricsContainer.innerHTML = `
+                    <div class="empty-state">No llegaron métricas verbales en la respuesta del backend.</div>
+                `;
+            }
+
+            // Mostrar transcripción
+            transcriptionBox.textContent = data?.data?.transcription || 'Sin transcripción disponible';
+
+            transcriptionSegmentsContainer.innerHTML = transcriptSegments.length > 0
+                ? `<div class="transcript-list">
+                    ${transcriptSegments.map((segment) => renderSegment(segment)).join('')}
+                </div>`
+                : `<div class="empty-state">No llegaron segmentos con tiempo desde el backend.</div>`;
+
+            // Procesar evaluación de contenido
+            const evaluationText = data?.data?.content_evaluation || '';
+
+            // Intentar parsear JSON desde la respuesta
+            const jsonMatch = evaluationText.match(/\{[\s\S]*\}/);
+            let evaluation = null;
+
+            if (jsonMatch) {
+                try {
+                    evaluation = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    // Si no se puede parsear, mostrar el texto plano
+                    evaluation = null;
+                }
+            }
+
+            if (evaluation) {
+                // Renderizar estructura
+                evaluationContainer.innerHTML = `
+                    <div class="score-badge">${evaluation.puntaje_global || 'N/A'}/100</div>
+
+                    <div class="points-list">
+                        <h4>✨ Puntos Fuertes</h4>
+                        <ul>
+                            ${(evaluation.puntos_fuertes || [])
+                                .map((punto) => `<li>${punto}</li>`)
+                                .join('')}
+                        </ul>
+                    </div>
+
+                    <div class="points-list">
+                        <h4>⚠️ Puntos a Mejorar</h4>
+                        <ul>
+                            ${(evaluation.puntos_debiles || [])
+                                .map((punto) => `<li>${punto}</li>`)
+                                .join('')}
+                        </ul>
+                    </div>
+
+                    <div class="recommendation-box">
+                        <h4>💡 Recomendación</h4>
+                        <p>${evaluation.recomendacion || 'Sin recomendación disponible'}</p>
+                    </div>
+                `;
+            } else {
+                // Si no se pudo parsear, mostrar el texto plano
+                evaluationContainer.innerHTML = `
+                    <div class="evaluation-box">
+                        ${evaluationText}
+                    </div>
+                `;
+            }
+
+            if (nonverbalEvaluation?.available) {
+                const nonverbalText = nonverbalEvaluation.analysis || '';
+                const nonverbalJsonMatch = nonverbalText.match(/\{[\s\S]*\}/);
+                let nonverbalParsed = null;
+
+                if (nonverbalJsonMatch) {
+                    try {
+                        nonverbalParsed = JSON.parse(nonverbalJsonMatch[0]);
+                    } catch (e) {
+                        nonverbalParsed = null;
+                    }
+                }
+
+                if (nonverbalParsed) {
+                    nonverbalContainer.innerHTML = `
+                        <div class="score-badge">${nonverbalParsed.puntaje_global || 'N/A'}/100</div>
+
+                        <div class="points-list">
+                            <h4>✅ Fortalezas</h4>
+                            <ul>
+                                ${(nonverbalParsed.fortalezas || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="points-list">
+                            <h4>⚠️ Debilidades</h4>
+                            <ul>
+                                ${(nonverbalParsed.debilidades || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Postura</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.postura || 'Sin información')}</div>
+                        </div>
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Contacto visual</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.contacto_visual || 'Sin información')}</div>
+                        </div>
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Uso de manos</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.uso_manos || 'Sin información')}</div>
+                        </div>
+                        <div class="meta-card" style="margin-top:12px;">
+                            <div class="meta-label">Expresión facial</div>
+                            <div class="meta-value">${escapeHtml(nonverbalParsed.expresion_facial || 'Sin información')}</div>
+                        </div>
+
+                        <div class="recommendation-box">
+                            <h4>💡 Recomendación</h4>
+                            <p>${escapeHtml(nonverbalParsed.recomendacion || 'Sin recomendación disponible')}</p>
+                        </div>
+                    `;
+                } else {
+                    nonverbalContainer.innerHTML = `
+                        <div class="evaluation-box">${escapeHtml(nonverbalText || 'No se pudo estructurar el análisis no verbal')}</div>
+                    `;
+                }
+            } else if (nonverbalEvaluation && nonverbalEvaluation.available === false) {
+                nonverbalContainer.innerHTML = `
+                    <div class="empty-state">${escapeHtml(nonverbalEvaluation.reason || 'El análisis no verbal no estuvo disponible')}</div>
+                `;
+            } else {
+                nonverbalContainer.innerHTML = `<div class="empty-state">No llegó análisis no verbal desde el backend.</div>`;
+            }
+
+            // Mostrar respuesta JSON cruda
+            rawResponseContent.textContent = JSON.stringify(data, null, 2);
+
+            // Mostrar resultados
+            currentData = data;
+            updateTabActionButton();
+            results.classList.add('show');
+        }
+
+        function renderSegment(segment) {
+            const fillers = Array.isArray(segment.muletillas_detectadas) ? segment.muletillas_detectadas : [];
+            return `
+                <div class="transcript-item">
+                    <div class="transcript-item-header">
+                        <div class="time-range">${formatTime(segment.inicio)} - ${formatTime(segment.fin)}</div>
+                        <div class="segment-index">Segmento ${segment.indice}</div>
+                    </div>
+                    <div class="segment-text">${escapeHtml(segment.texto || '')}</div>
+                    <div class="filler-badges">
+                        ${fillers.length > 0
+                            ? fillers.map((filler) => `<span class="filler-badge">Muletilla: ${escapeHtml(filler)}</span>`).join('')
+                            : '<span class="filler-badge" style="background:#eef7ee;color:#2d6a2d;">Sin muletillas detectadas</span>'
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatTime(seconds) {
+            if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) {
+                return '0:00';
+            }
+
+            const totalSeconds = Math.max(0, Math.floor(Number(seconds)));
+            const minutes = Math.floor(totalSeconds / 60);
+            const remainingSeconds = totalSeconds % 60;
+            return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        function formatDuration(seconds) {
+            const duration = Number(seconds || 0);
+            if (!duration) {
+                return 'No disponible';
+            }
+
+            return `${duration.toFixed(0)} segundos`;
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.add('show');
+        }
+
+        function formatApiError(errorData, status) {
+            const detail = errorData?.detail;
+            if (typeof detail === 'string') {
+                return detail;
+            }
+            if (Array.isArray(detail)) {
+                return detail
+                    .map((item) => {
+                        const location = Array.isArray(item?.loc) ? item.loc.join('.') : 'body';
+                        return `${location}: ${item?.msg || 'Error de validación'}`;
+                    })
+                    .join(' | ');
+            }
+            if (detail && typeof detail === 'object') {
+                try {
+                    return JSON.stringify(detail);
+                } catch (e) {
+                    return `Error ${status}`;
+                }
+            }
+            return `Error ${status}`;
+        }
+
+        // Focus en el input al cargar
+        youtubeUrlInput.focus();
+        // Inicializar pestaña por defecto
+        switchTab(activeTab);
+    </script>
+</body>
+</html>
