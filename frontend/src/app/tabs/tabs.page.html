@@ -1,5 +1,5 @@
 <div class="app-layout-container">
-  
+
   <aside class="desktop-sidebar">
     <div class="sidebar-logo">
       <h2>AIPitch<span>.</span></h2>
@@ -11,6 +11,9 @@
       <a routerLink="/tabs/recorder" routerLinkActive="active-link">
         <ion-icon name="videocam-outline"></ion-icon> Grabar Pitch
       </a>
+      <a routerLink="/tabs/pitch-detail" routerLinkActive="active-link">
+        <ion-icon name="eye-outline"></ion-icon> Detalle del Pitch
+      </a>
       <a routerLink="/tabs/history" routerLinkActive="active-link">
         <ion-icon name="time-outline"></ion-icon> Historial
       </a>
@@ -20,7 +23,7 @@
   <main class="main-content-viewport">
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
-      
+
       <ion-tab-bar slot="bottom" class="mobile-only-tabbar">
         <ion-tab-button tab="home">
           <ion-icon name="home-outline"></ion-icon>

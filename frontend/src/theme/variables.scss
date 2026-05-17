@@ -3,21 +3,24 @@
 
 :root {
   /* ========================================================
-     PALETA POR DEFECTO: MODO CLARO (SaaS Corporativo / Profesional)
+     PALETA POR DEFECTO: MODO CLARO 
      ======================================================== */
-  --ion-background-color: #ffffff;          /* Fondo blanco corporativo e impecable */
-  --ion-text-color: #0f172a;                /* Slate ultra oscuro para máxima legibilidad */
+  --ion-background-color: #f4f6f9;         
+  --ion-text-color: #0f172a;                
 
   /* Capas de componentes (Estructura de cajas limpia) */
-  --card-bg-glass: #f8fafc;                 /* Base gris neutra sutil (adiós transparencias raras) */
-  --border-glass: #e2e8f0;                  /* Borde sólido y fino gris slate */
-  --bento-hover-bg: #f1f5f9;                /* Feedback de hover limpio */
-  --shadow-color: rgba(15, 23, 42, 0.05);   /* Sombra muy suave de software de escritorio */
+  --card-bg-glass: #ffffff;                 
+  --border-glass: #e2e8f0;                 
+  --bento-hover-bg: #f8fafc;               
+  --shadow-color:rgba(0, 0, 0, 0.03);   
   --text-muted: #64748b;                    /* Color para descripciones y subtítulos */
 
-  /* Identidad de Marca: Azul Tecnológico Seguro (Estilo Vercel/Linear Enterprise) */
-  --ion-color-primary: #2563eb;             /* Azul Royal Formal */
-  --ion-color-primary-tint: #3b82f6;
+  --sidebar-bg: #ffffff;                    /* Fondo lateral gris suave institucional */
+  --sidebar-border: #e2e8f0;                /* Separador fino lateral */
+
+  /* Identidad de Marca: Azul Tecnológico  */
+  --ion-color-primary: #0284c7;             /* Azul Celeste */
+  --ion-color-primary-tint: #0ea5e9;
   
   /* Indicadores Semánticos de Rúbricas ANID/CORFO */
   --ion-color-success: #16a34a;             /* Verde esmeralda serio */
@@ -30,22 +33,29 @@
      PALETA ADAPTATIVA: MODO OSCURO (Slate Profundo, Sobrio y Profesional)
      ======================================================== */
   :root {
-    --ion-background-color: #0f172a;        /* Azul pizarra/gris neutro muy profundo (No Neón) */
-    --ion-text-color: #f8fafc;              /* Texto blanco grisáceo suave */
+    --ion-background-color: #0b0f17;        /* Azul pizarra/gris neutro muy profundo (No Neón) */
+    --ion-text-color: #f0f3f8;              /* Texto blanco grisáceo suave */
 
-    /* Capas de componentes en modo oscuro (Bloques sólidos integrados) */
-    --card-bg-glass: #1e293b;               /* Tarjetas un tono más claro que el fondo general */
-    --border-glass: #334155;                /* Borde sutil oscuro slate */
-    --bento-hover-bg: #334155;              /* Resalte al pasar el mouse */
-    --shadow-color: rgba(0, 0, 0, 0.3);     /* Sombra profunda */
-    --text-muted: #94a3b8;
+    /* Capas de componentes en modo oscuro  */
+    --card-bg-glass: #131924;               /* Tarjetas un tono más claro que el fondo general */
+    --border-glass: #212b3c;                /* Borde sutil oscuro slate */
+    --bento-hover-bg: #1a2332;              /* Resalte al pasar el mouse */
+    --shadow-color: rgba(0, 0, 0, 0.5);     /* Sombra profunda */
+    --text-muted: #768396;
+
+    /* --- COMPONENTES DE NAVEGACIÓN OSCURO --- */
+    --sidebar-bg: #0d1118;                  /* Fondo lateral slate profundo */
+    --sidebar-border: #1b2331;
 
     /* Ajuste de marca para contraste en pantallas oscuras */
     --ion-color-primary: #3b82f6;           /* Azul más vivo para que resalte correctamente */
-    --ion-color-primary-tint: #60a5fa;
+    --ion-color-primary-tint: #7dd3fc;
     --ion-color-success: #22c55e;
     --ion-color-warning: #f59e0b;
     --icon-box-opacity: 0.12;
+
+    --bg-glow: radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.06), transparent 50%),
+               radial-gradient(circle at 0% 40%, rgba(37, 99, 235, 0.02), transparent 40%);
   }
 }
 
@@ -54,12 +64,22 @@
    ======================================================== */
 * {
   font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 /* Unificamos los componentes nativos para que hereden nuestras variables */
 ion-content {
   --background: var(--ion-background-color) !important;
+
+  /* Inyectar el sutil degradado de fondo en el contenedor principal */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg-glow);
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 ion-tab-bar {
@@ -72,6 +92,4 @@ ion-tab-bar {
 ion-tab-button {
   --color-selected: var(--ion-color-primary) !important;
   --color: var(--text-muted) !important;
-  font-size: 0.82rem;
-  font-weight: 500;
 }

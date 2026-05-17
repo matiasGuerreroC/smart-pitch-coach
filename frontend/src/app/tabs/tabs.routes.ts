@@ -15,6 +15,10 @@ export const routes: Routes = [
         loadComponent: () => import('../pages/recorder/recorder.page').then(m => m.RecorderPage)
       },
       {
+        path: 'pitch-detail',
+        loadComponent: () => import('../pages/pitch-detail/pitch-detail.page').then(m => m.PitchDetailPage)
+      },
+      {
         path: 'history',
         loadComponent: () => import('../pages/history/history.page').then(m => m.HistoryPage)
       },
