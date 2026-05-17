@@ -85,31 +85,27 @@
 
 /* --- COLUMNA DERECHA: CONTENEDOR DE LA IMAGEN / MOCK --- */
 .hero-visual-anchor {
-  flex: 1.2; 
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
   width: 100%;
 
   .visual-mock-wrapper {
     position: relative;
     width: 100%;
-    max-width: 620px; 
+    max-width: 480px;
     
-    .img-responsive-mock {
-      width: 100%;
+    
+    .img-responsive-mock {      width: 100%;  
       height: auto;
-      
-      /* FORZAR RELACIÓN RECTANGULAR: 
-         Mantiene un ratio de 16:9 (estilo monitor o reproductor de video horizontal) */
-      aspect-ratio: 16 / 9; 
-      object-fit: cover; /* Evita que la imagen se deforme si cambia de tamaño */
-      
-      border-radius: 12px;
+      border-radius: 16px;
       border: 1px solid var(--border-glass);
-      box-shadow: 0 20px 40px var(--shadow-color);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      position: relative;
+      z-index: 2;
     }
-
 
     /* Halo de luz difuminado detrás del gráfico para el look premium */
     .glow-behind-image {
