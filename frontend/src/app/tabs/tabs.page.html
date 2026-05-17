@@ -17,13 +17,25 @@
       <a routerLink="/tabs/feedback-panel" routerLinkActive="active-link">
         <ion-icon name="chatbubbles-outline"></ion-icon> Retroalimentación
       </a>
-            <a routerLink="/tabs/history" routerLinkActive="active-link">
+      <a routerLink="/tabs/history" routerLinkActive="active-link">
         <ion-icon name="time-outline"></ion-icon> Historial
       </a>
       <a routerLink="/tabs/rubrics-manager" routerLinkActive="active-link">
         <ion-icon name="card-outline"></ion-icon> Carga de Rúbricas
       </a>
     </nav>
+    <div class="sidebar-user-profile">
+      <div class="user-avatar-wrapper">
+        <span class="avatar-initials">JP</span>
+      </div>
+      <div class="user-info-text">
+        <h4>Juan Pérez</h4>
+        <p>Postulante VIU</p>
+      </div>
+      <button class="btn-user-settings" routerLink="/login">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </button>
+    </div>
   </aside>
 
   <main class="main-content-viewport">
