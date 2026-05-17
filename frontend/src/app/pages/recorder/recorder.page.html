@@ -1,13 +1,146 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>recorder</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-padding" color="background">
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">recorder</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <header class="module-header">
+    <h2>Analizador de Video</h2>
+    <p class="subtitle">Sube tu presentación para comenzar la evaluación</p>
+  </header>
+
+  <ion-segment [(ngModel)]="uploadMode" color="primary" class="custom-segment ion-margin-bottom">
+    <ion-segment-button value="file">
+      <ion-label>Archivo Local</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="link">
+      <ion-label>Enlace Externo</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <div class="mode-container" *ngIf="uploadMode === 'file'">
+    <div 
+      class="drop-zone" 
+      [class.dragging]="isDragging"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+      (click)="triggerSelect()"
+      *ngIf="!selectedFile">
+      
+      <div class="drop-zone-content">
+        <div class="icon-bubble">
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+        </div>
+        <h3>Arrastra tu video aquí</h3>
+        <p>o <span class="browse-link">explora tus archivos</span></p>
+        <span class="file-spec">Formatos: MP4, MOV (Máx. 2 - 3 minutos)</span>
+      </div>
+    </div>
+
+    <div class="upload-status-card" *ngIf="selectedFile">
+      <div class="file-info-row">
+        <div class="file-icon-wrapper">
+          <ion-icon name="document-outline" color="primary"></ion-icon>
+        </div>
+        <div class="file-meta">
+          <h4>{{ selectedFile.name }}</h4>
+          <p>{{ (selectedFile.size / (1024 * 1024)) | number:'1.2-2' }} MB</p>
+        </div>
+        <button class="btn-delete" (click)="eliminarArchivo()" *ngIf="!isUploading">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="progress-wrapper" *ngIf="isUploading || uploadComplete">
+        <ion-progress-bar [value]="uploadProgress" color="primary"></ion-progress-bar>
+        <div class="progress-labels">
+          <span *ngIf="isUploading">Subiendo video... {{ (uploadProgress * 100) | number:'1.0-0' }}%</span>
+          <span *ngIf="uploadComplete" class="success-text">
+            <ion-icon name="checkmark-circle"></ion-icon> ¡Subida e indexación completada!
+          </span>
+        </div>
+      </div>
+
+      <div class="card-actions" *ngIf="!isUploading && !uploadComplete">
+        <ion-button expand="block" class="btn-upload-submit" (click)="subirVideo()">
+          Iniciar Análisis del Video
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mode-container" *ngIf="uploadMode === 'link'">
+    <div class="link-input-card" *ngIf="!uploadComplete">
+      <div class="card-instruction">
+        <div class="icon-bubble youtube-color">
+          <ion-icon name="logo-youtube"></ion-icon>
+        </div>
+        <h3>Vincula tu Video de YouTube</h3>
+        <p>Ideal para videos configurados como Ocultos o Públicos.</p>
+      </div>
+
+      <div class="input-wrapper">
+        <ion-icon name="link-outline" class="input-left-icon"></ion-icon>
+        <ion-input 
+          type="url" 
+          placeholder="https://www.youtube.com/watch?v=..." 
+          [(ngModel)]="youtubeUrl" 
+          [disabled]="isUploading"
+          class="custom-ion-input">
+        </ion-input>
+      </div>
+
+      <div class="progress-wrapper" *ngIf="isUploading">
+        <ion-progress-bar [value]="uploadProgress" color="primary"></ion-progress-bar>
+        <div class="progress-labels">
+          <span>Sincronizando stream con S3 y Celery...</span>
+        </div>
+      </div>
+
+      <div class="card-actions" *ngIf="!isUploading">
+        <ion-button expand="block" class="btn-upload-submit" [disabled]="!youtubeUrl" (click)="procesarEnlace()">
+          Vincular y Procesar Enlace
+        </ion-button>
+      </div>
+    </div>
+
+    <div class="upload-status-card" *ngIf="uploadComplete && uploadMode === 'link'">
+      <div class="file-info-row">
+        <div class="file-icon-wrapper youtube-color-bg">
+          <ion-icon name="logo-youtube"></ion-icon>
+        </div>
+        <div class="file-meta">
+          <h4>Video de YouTube Vinculado</h4>
+          <p class="success-text">En cola de procesamiento asíncrono</p>
+        </div>
+        <button class="btn-delete" (click)="eliminarArchivo()">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="tips-carousel-section">
+    <div class="carousel-card">
+      <div class="carousel-header">
+        <div class="title-wrapper">
+          <ion-icon name="bulb-outline" color="warning"></ion-icon>
+          <span>Tip del Coach Inteligente</span>
+        </div>
+        <div class="carousel-controls">
+          <button (click)="prevTip()"><ion-icon name="chevron-back-outline"></ion-icon></button>
+          <button (click)="nextTip()"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+        </div>
+      </div>
+      
+      <div class="carousel-body">
+        <h4>{{ tips[currentTipIndex].title }}</h4>
+        <p>{{ tips[currentTipIndex].desc }}</p>
+      </div>
+      
+      <div class="carousel-dots">
+        <span *ngFor="let tip of tips; let i = index" [class.active-dot]="i === currentTipIndex"></span>
+      </div>
+    </div>
+  </footer>
+
+  <input type="file" #fileInput accept="video/*" style="display: none;" (change)="onFileSelected($event)">
+
 </ion-content>

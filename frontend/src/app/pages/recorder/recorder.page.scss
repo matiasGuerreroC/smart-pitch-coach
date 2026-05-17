@@ -1,0 +1,201 @@
+ion-content {
+  --background: var(--ion-background-color);
+}
+
+.module-header {
+  margin: 24px 0 24px 0;
+  h2 { font-size: 1.6rem; font-weight: 800; color: var(--ion-text-color); margin: 0; }
+  .subtitle { color: #6b7280; font-size: 0.88rem; margin: 6px 0 0 0; line-height: 1.4; }
+}
+
+/* Selector Segmentado Adaptado */
+.custom-segment {
+  background: var(--card-bg-glass) !important;
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 4px;
+  
+  ion-segment-button {
+    --background-checked: var(--ion-color-primary) !important;
+    --color-checked: #ffffff !important;
+    --color: #6b7280 !important;
+    --indicator-color: transparent !important; // Quita la línea nativa fea de Android
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    min-height: 38px;
+  }
+}
+
+/* Modos de Contenedores */
+.mode-container {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Tarjeta para Entrada de Enlaces */
+.link-input-card {
+  background: var(--card-bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 10px 25px -10px var(--shadow-color);
+
+  .card-instruction {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    h3 { font-size: 1.1rem; font-weight: 700; color: var(--ion-text-color); margin: 0 0 4px 0; }
+    p { font-size: 0.85rem; color: #6b7280; margin: 0; }
+  }
+
+  .icon-bubble {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    background: rgba(79, 70, 229, 0.08);
+    ion-icon { font-size: 1.6rem; color: var(--ion-color-primary); }
+
+    &.youtube-color {
+      background: rgba(239, 68, 68, 0.1);
+      ion-icon { color: #ef4444; }
+    }
+  }
+}
+
+/* Input Personalizado */
+.input-wrapper {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 2px 14px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: var(--ion-color-primary);
+  }
+
+  .input-left-icon {
+    font-size: 1.25rem;
+    color: #4b5563;
+    margin-right: 10px;
+  }
+
+  .custom-ion-input {
+    --padding-start: 0px;
+    color: var(--ion-text-color);
+    font-size: 0.9rem;
+  }
+}
+
+/*  CARRUSEL RECOMENDACIONES  */
+.tips-carousel-section {
+  margin-top: 28px;
+
+  .carousel-card {
+    background: var(--card-bg-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 20px -8px var(--shadow-color);
+  }
+
+  .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+
+    .title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      ion-icon { font-size: 1.1rem; }
+    }
+
+    .carousel-controls button {
+      background: transparent;
+      border: none;
+      color: #6b7280;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+      &:hover { background: rgba(255, 255, 255, 0.05); color: var(--ion-text-color); }
+    }
+  }
+
+  .carousel-body {
+    min-height: 85px; // Evita saltos de layout cuando cambia el texto largo
+    h4 { font-size: 0.98rem; font-weight: 700; color: var(--ion-text-color); margin: 0 0 6px 0; }
+    p { font-size: 0.84rem; color: #6b7280; margin: 0; line-height: 1.45; }
+  }
+
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+
+    span {
+      width: 6px;
+      height: 6px;
+      background: rgba(107, 114, 128, 0.3);
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    .active-dot {
+      background: var(--ion-color-primary);
+      width: 14px;
+      border-radius: 3px;
+    }
+  }
+}
+
+.drop-zone {
+  border: 2px dashed var(--border-glass); background: var(--card-bg-glass); border-radius: 20px;
+  padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out;
+  display: flex; justify-content: center; align-items: center; min-height: 220px;
+  box-shadow: 0 10px 25px -10px var(--shadow-color);
+  &:hover, &.dragging { border-color: var(--ion-color-primary); background: var(--bento-hover-bg); transform: scale(0.99); }
+  .drop-zone-content { display: flex; flex-direction: column; align-items: center;
+    .icon-bubble { width: 52px; height: 52px; background: rgba(79, 70, 229, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; ion-icon { font-size: 1.6rem; color: var(--ion-color-primary); } }
+    h3 { font-size: 1.05rem; font-weight: 700; color: var(--ion-text-color); margin: 0 0 4px 0; }
+    p { font-size: 0.88rem; color: #6b7280; margin: 0 0 14px 0; }
+    .browse-link { color: var(--ion-color-primary); font-weight: 600; text-decoration: underline; }
+    .file-spec { font-size: 0.72rem; color: #9ca3af; } }
+}
+
+.upload-status-card {
+  background: var(--card-bg-glass); border: 1px solid var(--border-glass); border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px -10px var(--shadow-color);
+  .file-info-row { display: flex; align-items: center; gap: 14px; }
+  .file-icon-wrapper { width: 40px; height: 40px; background: rgba(79, 70, 229, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; ion-icon { font-size: 1.3rem; }
+    &.youtube-color-bg { background: rgba(239, 68, 68, 0.15); ion-icon { color: #ef4444; } } }
+  .file-meta { flex-grow: 1; overflow: hidden; h4 { font-size: 0.9rem; font-weight: 600; color: var(--ion-text-color); margin: 0 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } p { font-size: 0.78rem; color: #6b7280; margin: 0; } }
+  .btn-delete { background: transparent; color: #ef4444; font-size: 1.2rem; border: none; cursor: pointer; padding: 6px; border-radius: 6px; &:hover { background: rgba(239, 68, 68, 0.05); } }
+}
+
+.progress-wrapper { margin-top: 16px; ion-progress-bar { height: 5px; border-radius: 2px; }
+  .progress-labels { margin-top: 6px; font-size: 0.78rem; color: #6b7280; font-weight: 500;
+    .success-text { color: var(--ion-color-success); display: flex; align-items: center; gap: 4px; font-weight: 600; } } }
+
+.card-actions { margin-top: 16px; .btn-upload-submit { --background: var(--ion-color-primary); --border-radius: 10px; font-weight: 600; height: 44px; } }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
