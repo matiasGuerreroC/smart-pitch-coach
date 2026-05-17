@@ -2,8 +2,24 @@
 
   <header class="module-header">
     <h2>Analizador de Video</h2>
-    <p class="subtitle">Sube tu presentación para comenzar la evaluación</p>
+    <p class="subtitle">Configura las bases del concurso y carga tu video para iniciar la evaluación por IA</p>
   </header>
+
+  <div class="rubric-selector-wrapper ion-margin-bottom">
+    <div class="selector-label-row">
+      <ion-icon name="options-outline" color="primary"></ion-icon>
+      <span>1. Rúbrica de Evaluación Aplicada</span>
+    </div>
+
+    <div class="custom-select-container">
+      <ion-select [(ngModel)]="rubricaSeleccionada" interface="popover" class="custom-ion-select"
+        placeholder="Seleccionar base de concurso">
+        <ion-select-option *ngFor="let rub of listaRubricas" [value]="rub.id">
+          {{ rub.nombre }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+  </div>
 
   <ion-segment [(ngModel)]="uploadMode" color="primary" class="custom-segment ion-margin-bottom">
     <ion-segment-button value="file">
@@ -14,6 +30,9 @@
     </ion-segment-button>
   </ion-segment>
 
+
+
+
   <div class="mode-container" *ngIf="uploadMode === 'file'">
     <div 
       class="drop-zone" 
@@ -23,7 +42,7 @@
       (drop)="onDrop($event)"
       (click)="triggerSelect()"
       *ngIf="!selectedFile">
-      
+
       <div class="drop-zone-content">
         <div class="icon-bubble">
           <ion-icon name="cloud-upload-outline"></ion-icon>
@@ -48,12 +67,12 @@
         </button>
       </div>
 
-      <div class="progress-wrapper" *ngIf="isUploading || uploadComplete">
+<div class="progress-wrapper" *ngIf="isUploading || uploadComplete">
         <ion-progress-bar [value]="uploadProgress" color="primary"></ion-progress-bar>
         <div class="progress-labels">
-          <span *ngIf="isUploading">Subiendo video... {{ (uploadProgress * 100) | number:'1.0-0' }}%</span>
+          <span *ngIf="isUploading">Subiendo video y vinculando rúbrica... {{ (uploadProgress * 100) | number:'1.0-0' }}%</span>
           <span *ngIf="uploadComplete" class="success-text">
-            <ion-icon name="checkmark-circle"></ion-icon> ¡Subida e indexación completada!
+            <ion-icon name="checkmark-circle"></ion-icon> ¡Subida completada! IA Procesando cola...
           </span>
         </div>
       </div>
@@ -78,19 +97,15 @@
 
       <div class="input-wrapper">
         <ion-icon name="link-outline" class="input-left-icon"></ion-icon>
-        <ion-input 
-          type="url" 
-          placeholder="https://www.youtube.com/watch?v=..." 
-          [(ngModel)]="youtubeUrl" 
-          [disabled]="isUploading"
-          class="custom-ion-input">
+        <ion-input type="url" placeholder="https://www.youtube.com/watch?v=..." [(ngModel)]="youtubeUrl"
+          [disabled]="isUploading" class="custom-ion-input">
         </ion-input>
       </div>
 
       <div class="progress-wrapper" *ngIf="isUploading">
         <ion-progress-bar [value]="uploadProgress" color="primary"></ion-progress-bar>
         <div class="progress-labels">
-          <span>Sincronizando stream con S3 y Celery...</span>
+          <span>Sincronizando stream ...</span>
         </div>
       </div>
 
@@ -129,12 +144,12 @@
           <button (click)="nextTip()"><ion-icon name="chevron-forward-outline"></ion-icon></button>
         </div>
       </div>
-      
+
       <div class="carousel-body">
         <h4>{{ tips[currentTipIndex].title }}</h4>
         <p>{{ tips[currentTipIndex].desc }}</p>
       </div>
-      
+
       <div class="carousel-dots">
         <span *ngFor="let tip of tips; let i = index" [class.active-dot]="i === currentTipIndex"></span>
       </div>

@@ -1,13 +1,15 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonIcon, IonButton, IonProgressBar, IonInput, IonSegment, IonSegmentButton, IonLabel } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonButton, IonProgressBar, IonInput, IonSegment, IonSegmentButton, IonLabel, IonSelect, 
+  IonSelectOption } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   cloudUploadOutline, documentOutline, checkmarkCircle, 
   trashOutline, logoYoutube, linkOutline, bulbOutline,
-  chevronBackOutline, chevronForwardOutline
+  chevronBackOutline, chevronForwardOutline, optionsOutline
 } from 'ionicons/icons';
+
 
 @Component({
   selector: 'app-recorder',
@@ -17,7 +19,7 @@ import {
   imports: [
     CommonModule, FormsModule,
     IonContent, IonIcon, IonButton, IonProgressBar, 
-    IonInput, IonSegment, IonSegmentButton, IonLabel
+    IonInput, IonSegment, IonSegmentButton, IonLabel, IonSelect, IonSelectOption
   ]
 })
 export class RecorderPage implements OnInit, OnDestroy {
@@ -26,6 +28,17 @@ export class RecorderPage implements OnInit, OnDestroy {
   // Gestión de pestañas y modos de carga
   uploadMode: 'file' | 'link' = 'file';
   youtubeUrl: string = '';
+
+  // Variables para la gestión y asignación de rúbricas
+  rubricaSeleccionada: string = 'viu-anid'; // Valor por defecto
+  listaRubricas = [
+    // 2 Rúbricas cargadas por defecto en el core de AIPitch
+    { id: 'viu-anid', nombre: 'VIU ANID (Predeterminada)', institucional: true },
+    { id: 'corfo-crea', nombre: 'CORFO Crea y Valida', institucional: true },
+    // Simulación de rúbricas que el usuario cargó previamente en el rubrics-manager
+    { id: 'usr-01', nombre: 'Bases Concurso Startup Ciencia 2026', institucional: false },
+    { id: 'usr-02', nombre: 'Fondo UDP Innovación Alumnos', institucional: false }
+  ];
   
   // Estado de Archivos Locales
   selectedFile: File | null = null;

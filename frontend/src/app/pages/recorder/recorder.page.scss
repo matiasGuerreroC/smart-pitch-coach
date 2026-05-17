@@ -199,3 +199,48 @@ ion-content {
 .card-actions { margin-top: 16px; .btn-upload-submit { --background: var(--ion-color-primary); --border-radius: 10px; font-weight: 600; height: 44px; } }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+
+.rubric-selector-wrapper {
+  background: var(--card-bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 10px var(--shadow-color);
+
+  .selector-label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+
+    ion-icon { font-size: 1.1rem; }
+  }
+}
+
+/* Pulido de la caja de Input Select de Ionic */
+.custom-select-container {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 2px 8px;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: var(--ion-color-primary);
+  }
+
+  /* Reset y tipografía interna del selector */
+  .custom-ion-select {
+    --padding-start: 4px;
+    color: var(--ion-text-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 100%;
+  }
+}
