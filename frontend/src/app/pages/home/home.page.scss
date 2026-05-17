@@ -20,6 +20,110 @@
     }
   }
 
+  /* --- MAQUETACIÓN ESTRUCTURA HERO (LANDING) --- */
+.hero-landing-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  margin: 40px 0 60px 0;
+  position: relative;
+  z-index: 1;
+
+  /* Si se abre en celulares o pantallas verticales, se apila en una sola fila */
+  @media (max-width: 991px) {
+    flex-direction: column;
+    text-align: center;
+    margin: 24px 0 40px 0;
+    gap: 32px;
+  }
+}
+
+.hero-text-content {
+  flex: 1;
+  max-width: 550px;
+
+  @media (max-width: 991px) {
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--ion-text-color);
+    margin: 20px 0 14px 0;
+    letter-spacing: -0.03em;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+/* Contenedor del Botón de la Landing */
+.hero-actions {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 280px;
+
+  .btn-cta-primary {
+    --background: var(--ion-color-primary);
+    --border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    height: 48px;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15);
+  }
+}
+
+/* --- COLUMNA DERECHA: CONTENEDOR DE LA IMAGEN / MOCK --- */
+.hero-visual-anchor {
+  flex: 1.2; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+
+  .visual-mock-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 620px; 
+    
+    .img-responsive-mock {
+      width: 100%;
+      height: auto;
+      
+      /* FORZAR RELACIÓN RECTANGULAR: 
+         Mantiene un ratio de 16:9 (estilo monitor o reproductor de video horizontal) */
+      aspect-ratio: 16 / 9; 
+      object-fit: cover; /* Evita que la imagen se deforme si cambia de tamaño */
+      
+      border-radius: 12px;
+      border: 1px solid var(--border-glass);
+      box-shadow: 0 20px 40px var(--shadow-color);
+    }
+
+
+    /* Halo de luz difuminado detrás del gráfico para el look premium */
+    .glow-behind-image {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%; height: 80%;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.08), transparent 65%);
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+}
+
   .user-status-badge {
     display: flex;
     align-items: center;

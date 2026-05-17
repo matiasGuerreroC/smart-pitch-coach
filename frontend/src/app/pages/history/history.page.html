@@ -1,13 +1,57 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>history</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-padding">
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">history</ion-title>
-    </ion-toolbar>
-  </ion-header>
-</ion-content>
+  <header class="module-header">
+    <div class="header-meta">
+      <span class="module-tag"><ion-icon name="time-outline"></ion-icon> Línea de Tiempo</span>
+    </div>
+    <h2>Historial de Ensayos</h2>
+    <p class="subtitle">Revisa la evolución de tus presentaciones y compáralas con las bases indexadas.</p>
+  </header>
+
+  <div class="history-timeline-container">
+    
+    <div class="history-card-item" *ngFor="let ensayo of listaEnsayos" [routerLink]="['/tabs/feedback-panel']">
+      
+      <div class="card-header-row">
+        <div class="title-block">
+          <div class="video-indicator">
+            <ion-icon name="videocam-outline"></ion-icon>
+          </div>
+          <div class="text-meta">
+            <h3>{{ ensayo.titulo }}</h3>
+            <span class="date-text"><ion-icon name="calendar-outline"></ion-icon> {{ ensayo.fecha }}</span>
+          </div>
+        </div>
+        <ion-badge color="primary" class="rubric-badge">{{ ensayo.rubrica }}</ion-badge>
+      </div>
+
+      <div class="card-metrics-row">
+        <div class="metric-tag-indicator">
+          <ion-icon name="eye-outline" color="primary"></ion-icon>
+          <span>No Verbal: <strong>{{ ensayo.scoreNoVerbal }}%</strong></span>
+        </div>
+        <div class="metric-tag-indicator">
+          <ion-icon name="mic-outline" color="warning"></ion-icon>
+          <span>Verbal: <strong>{{ ensayo.scoreVerbal }}%</strong></span>
+        </div>
+      </div>
+
+      <div class="card-footer-row">
+        <div class="score-summary">
+          <span class="score-label">Puntaje IA:</span>
+          <span class="score-value" [class.high-score]="ensayo.scoreGlobal >= 75" [class.mid-score]="ensayo.scoreGlobal < 75 && ensayo.scoreGlobal >= 60">
+            {{ ensayo.scoreGlobal }}<span>/100</span>
+          </span>
+        </div>
+        
+        <div class="action-arrow">
+          <span>Ver Análisis</span>
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</ion-content>  
