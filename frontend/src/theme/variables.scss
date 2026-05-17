@@ -3,38 +3,49 @@
 
 :root {
   /* ========================================================
-     PALETA POR DEFECTO: MODO CLARO (Limpio, Corporativo, ANID)
+     PALETA POR DEFECTO: MODO CLARO (SaaS Corporativo / Profesional)
      ======================================================== */
-  --ion-background-color: #f8fafc;        /* Gris pizarra muy claro */
-  --ion-text-color: #0f172a;              /* Azul marino casi negro */
+  --ion-background-color: #ffffff;          /* Fondo blanco corporativo e impecable */
+  --ion-text-color: #0f172a;                /* Slate ultra oscuro para máxima legibilidad */
 
-  --card-bg-glass: rgba(255, 255, 255, 0.7);
-  --border-glass: rgba(15, 23, 42, 0.06);
-  --bento-hover-bg: rgba(255, 255, 255, 0.9);
-  --shadow-color: rgba(15, 23, 42, 0.08);
+  /* Capas de componentes (Estructura de cajas limpia) */
+  --card-bg-glass: #f8fafc;                 /* Base gris neutra sutil (adiós transparencias raras) */
+  --border-glass: #e2e8f0;                  /* Borde sólido y fino gris slate */
+  --bento-hover-bg: #f1f5f9;                /* Feedback de hover limpio */
+  --shadow-color: rgba(15, 23, 42, 0.05);   /* Sombra muy suave de software de escritorio */
+  --text-muted: #64748b;                    /* Color para descripciones y subtítulos */
 
-  /* Colores de Marca Cohesivos */
-  --ion-color-primary: #4f46e5;           /* Indigo */
-  --ion-color-primary-tint: #6366f1;
-  --ion-color-success: #10b981;           /* Esmeralda */
-  --ion-color-warning: #f59e0b;           /* Ámbar */
-  --icon-box-opacity: 0.1;
+  /* Identidad de Marca: Azul Tecnológico Seguro (Estilo Vercel/Linear Enterprise) */
+  --ion-color-primary: #2563eb;             /* Azul Royal Formal */
+  --ion-color-primary-tint: #3b82f6;
+  
+  /* Indicadores Semánticos de Rúbricas ANID/CORFO */
+  --ion-color-success: #16a34a;             /* Verde esmeralda serio */
+  --ion-color-warning: #d97706;             /* Ámbar balanceado */
+  --icon-box-opacity: 0.08;                 /* Opacidad controlada para el fondo de iconos */
 }
 
 @media (prefers-color-scheme: dark) {
   /* ========================================================
-     PALETA ADAPTATIVA: MODO OSCURO (Cyberpunk, IA Premium)
+     PALETA ADAPTATIVA: MODO OSCURO (Slate Profundo, Sobrio y Profesional)
      ======================================================== */
   :root {
-    --ion-background-color: #090d16;      /* Azul espacial profundo */
-    --ion-text-color: #f3f4f6;            /* Gris claro */
+    --ion-background-color: #0f172a;        /* Azul pizarra/gris neutro muy profundo (No Neón) */
+    --ion-text-color: #f8fafc;              /* Texto blanco grisáceo suave */
 
-    --card-bg-glass: rgba(20, 29, 47, 0.5);
-    --border-glass: rgba(255, 255, 255, 0.05);
-    --bento-hover-bg: rgba(255, 255, 255, 0.03);
-    --shadow-color: rgba(0, 0, 0, 0.4);
+    /* Capas de componentes en modo oscuro (Bloques sólidos integrados) */
+    --card-bg-glass: #1e293b;               /* Tarjetas un tono más claro que el fondo general */
+    --border-glass: #334155;                /* Borde sutil oscuro slate */
+    --bento-hover-bg: #334155;              /* Resalte al pasar el mouse */
+    --shadow-color: rgba(0, 0, 0, 0.3);     /* Sombra profunda */
+    --text-muted: #94a3b8;
 
-    --icon-box-opacity: 0.15;
+    /* Ajuste de marca para contraste en pantallas oscuras */
+    --ion-color-primary: #3b82f6;           /* Azul más vivo para que resalte correctamente */
+    --ion-color-primary-tint: #60a5fa;
+    --ion-color-success: #22c55e;
+    --ion-color-warning: #f59e0b;
+    --icon-box-opacity: 0.12;
   }
 }
 
@@ -52,12 +63,15 @@ ion-content {
 }
 
 ion-tab-bar {
-  --background: var(--ion-background-color) !important;
+  --background: var(--card-bg-glass) !important;
   border-top: 1px solid var(--border-glass) !important;
-  background: var(--ion-background-color) !important;
+  background: var(--card-bg-glass) !important;
+  height: 62px;
 }
 
 ion-tab-button {
   --color-selected: var(--ion-color-primary) !important;
-  --color: #6b7280 !important;
+  --color: var(--text-muted) !important;
+  font-size: 0.82rem;
+  font-weight: 500;
 }
