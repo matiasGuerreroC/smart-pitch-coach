@@ -1,72 +1,94 @@
-
-/* Contenedor Maestro Flexbox */
+/* ========================================================
+   CONTENEDOR MAESTRO DEL WORKSPACE (ADAPTATIVO)
+   ======================================================== */
 .app-layout-container {
   display: flex;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #0b0f19;
+  background-color: var(--ion-background-color); /* Hereda el fondo Slate/Gris Oscuro */
 }
 
 .main-content-viewport {
   flex: 1;
   height: 100%;
   position: relative;
+  background-color: var(--ion-background-color);
 }
 
-/* --- SIDEBAR PARA ESCRITORIO (WEB) --- */
+/* ========================================================
+   BARRA LATERAL (DESKTOP / WEB)
+   ======================================================== */
 .desktop-sidebar {
-  width: 260px;
-  background: #1b3d88;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  width: 250px;
+  background: var(--sidebar-bg); /* Cambia automáticamente segun variables.scss */
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 24px 16px;
+  position: relative;
+  z-index: 10;
   
-  /* Ocultar por defecto en pantallas pequeñas (móviles) */
   @media (max-width: 768px) {
-    display: none;
+    display: none; /* Ocultar en celulares */
   }
 
   .sidebar-logo h2 {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 40px 0;
-    span { color: var(--ion-color-primary); }
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--ion-text-color);
+    margin: 0 0 32px 12px;
+    letter-spacing: -0.03em;
+    .dot { color: var(--ion-color-primary); }
   }
 
   .sidebar-links {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
 
     a {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px 16px;
-      color: #9ca3af;
+      padding: 12px 14px;
+      color: var(--text-muted);
       text-decoration: none;
       font-weight: 500;
-      border-radius: 12px;
-      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      transition: all 0.2s ease-in-out;
 
-      ion-icon { font-size: 1.25rem; }
-      &:hover { background: rgba(255, 255, 255, 0.03); color: #fff; }
+      ion-icon { 
+        font-size: 1.2rem; 
+        color: var(--text-muted);
+        transition: color 0.2s;
+      }
+      
+      &:hover { 
+        background: var(--bento-hover-bg); 
+        color: var(--ion-text-color); 
+      }
     }
 
+    /* ESTADO ACTIVO  */
     .active-link {
-      background: var(--ion-color-primary) !important;
-      color: #fff !important;
+      background: rgba(88, 166, 255, var(--icon-box-opacity)) !important; /* Fondo suave */
+      color: var(--ion-color-primary) !important; /* Texto celeste */
+      font-weight: 600;
+
+      ion-icon { 
+        color: var(--ion-color-primary) !important; /* Icono celeste */
+      }
     }
   }
 }
 
-/* --- ADAPTACIÓN DE LA BARRA INFERIOR MÓVIL --- */
+/* ========================================================
+   BARRA INFERIOR (MÓVIL)
+   ======================================================== */
 .mobile-only-tabbar {
-  /* Ocultar la barra inferior si estamos en el computador */
   @media (min-width: 769px) {
-    display: none;
+    display: none; /* Ocultar en computadores */
   }
 }
