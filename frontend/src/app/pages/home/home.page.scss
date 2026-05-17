@@ -1,0 +1,113 @@
+// Header Superior unificado con el fondo
+.main-header {
+  margin: 24px 0 32px 0;
+  
+  .brand-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    h2 {
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: var(--ion-text-color); // Dinámico
+      margin: 0;
+      letter-spacing: -0.03em;
+      .dot { color: var(--ion-color-primary); }
+    }
+  }
+
+  .user-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card-bg-glass);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-glass);
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--ion-color-success);
+      border-radius: 50%;
+    }
+    .status-text { font-size: 0.72rem; font-weight: 600; color: #6b7280; }
+  }
+
+  .subtitle { color: #6b7280; font-size: 0.88rem; margin: 6px 0 0 0; }
+}
+
+// Contenedor Bento Grid
+.tools-grid-container {
+  .grid-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Tarjeta Modular Premium Adaptativa
+.bento-card {
+  background: var(--card-bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 170px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 10px 20px -10px var(--shadow-color);
+
+  &:hover {
+    transform: translateY(-2px);
+    background: var(--bento-hover-bg);
+    border-color: var(--ion-color-primary);
+  }
+
+  .card-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    ion-icon { font-size: 1.35rem; }
+
+    // Colores de los iconos con opacidades dinámicas
+    &.color-purple { background: rgba(139, 92, 246, var(--icon-box-opacity)); color: #8b5cf6; }
+    &.color-indigo { background: rgba(99, 102, 241, var(--icon-box-opacity)); color: #6366f1; }
+    &.color-amber { background: rgba(245, 158, 11, var(--icon-box-opacity)); color: #d97706; }
+    &.color-emerald { background: rgba(16, 185, 129, var(--icon-box-opacity)); color: #059669; }
+  }
+
+  .card-body {
+    h3 { font-size: 1.05rem; font-weight: 700; color: var(--ion-text-color); margin: 0 0 6px 0; }
+    p { font-size: 0.84rem; color: #6b7280; margin: 0; line-height: 1.4; }
+  }
+
+  .action-tag {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-top: 14px;
+  }
+}

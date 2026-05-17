@@ -1,18 +1,42 @@
-<ion-tabs>
-  <ion-tab-bar slot="bottom">
-    <ion-tab-button tab="home">
-      <ion-icon name="home-outline"></ion-icon>
-      <ion-label>Inicio</ion-label>
-    </ion-tab-button>
+<div class="app-layout-container">
+  
+  <aside class="desktop-sidebar">
+    <div class="sidebar-logo">
+      <h2>AIPitch<span>.</span></h2>
+    </div>
+    <nav class="sidebar-links">
+      <a routerLink="/tabs/home" routerLinkActive="active-link">
+        <ion-icon name="home-outline"></ion-icon> Inicio
+      </a>
+      <a routerLink="/tabs/recorder" routerLinkActive="active-link">
+        <ion-icon name="videocam-outline"></ion-icon> Grabar Pitch
+      </a>
+      <a routerLink="/tabs/history" routerLinkActive="active-link">
+        <ion-icon name="time-outline"></ion-icon> Historial
+      </a>
+    </nav>
+  </aside>
 
-    <ion-tab-button tab="recorder">
-      <ion-icon name="videocam-outline"></ion-icon>
-      <ion-label>Grabar Pitch</ion-label>
-    </ion-tab-button>
+  <main class="main-content-viewport">
+    <ion-tabs>
+      <ion-router-outlet></ion-router-outlet>
+      
+      <ion-tab-bar slot="bottom" class="mobile-only-tabbar">
+        <ion-tab-button tab="home">
+          <ion-icon name="home-outline"></ion-icon>
+          <ion-label>Inicio</ion-label>
+        </ion-tab-button>
 
-    <ion-tab-button tab="history">
-      <ion-icon name="time-outline"></ion-icon>
-      <ion-label>Historial</ion-label>
-    </ion-tab-button>
-  </ion-tab-bar>
-</ion-tabs>
+        <ion-tab-button tab="recorder">
+          <ion-icon name="videocam-outline"></ion-icon>
+          <ion-label>Grabar</ion-label>
+        </ion-tab-button>
+
+        <ion-tab-button tab="history">
+          <ion-icon name="time-outline"></ion-icon>
+          <ion-label>Historial</ion-label>
+        </ion-tab-button>
+      </ion-tab-bar>
+    </ion-tabs>
+  </main>
+</div>

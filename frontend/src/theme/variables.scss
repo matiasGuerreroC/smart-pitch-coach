@@ -1,2 +1,63 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+
+:root {
+  /* ========================================================
+     PALETA POR DEFECTO: MODO CLARO (Limpio, Corporativo, ANID)
+     ======================================================== */
+  --ion-background-color: #f8fafc;        /* Gris pizarra muy claro */
+  --ion-text-color: #0f172a;              /* Azul marino casi negro */
+
+  --card-bg-glass: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(15, 23, 42, 0.06);
+  --bento-hover-bg: rgba(255, 255, 255, 0.9);
+  --shadow-color: rgba(15, 23, 42, 0.08);
+
+  /* Colores de Marca Cohesivos */
+  --ion-color-primary: #4f46e5;           /* Indigo */
+  --ion-color-primary-tint: #6366f1;
+  --ion-color-success: #10b981;           /* Esmeralda */
+  --ion-color-warning: #f59e0b;           /* Ámbar */
+  --icon-box-opacity: 0.1;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* ========================================================
+     PALETA ADAPTATIVA: MODO OSCURO (Cyberpunk, IA Premium)
+     ======================================================== */
+  :root {
+    --ion-background-color: #090d16;      /* Azul espacial profundo */
+    --ion-text-color: #f3f4f6;            /* Gris claro */
+
+    --card-bg-glass: rgba(20, 29, 47, 0.5);
+    --border-glass: rgba(255, 255, 255, 0.05);
+    --bento-hover-bg: rgba(255, 255, 255, 0.03);
+    --shadow-color: rgba(0, 0, 0, 0.4);
+
+    --icon-box-opacity: 0.15;
+  }
+}
+
+/* ========================================================
+   ESTILOS GENERALES Y SUAVIZADO DE COMPONENTES IONIC
+   ======================================================== */
+* {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+/* Unificamos los componentes nativos para que hereden nuestras variables */
+ion-content {
+  --background: var(--ion-background-color) !important;
+}
+
+ion-tab-bar {
+  --background: var(--ion-background-color) !important;
+  border-top: 1px solid var(--border-glass) !important;
+  background: var(--ion-background-color) !important;
+}
+
+ion-tab-button {
+  --color-selected: var(--ion-color-primary) !important;
+  --color: #6b7280 !important;
+}
