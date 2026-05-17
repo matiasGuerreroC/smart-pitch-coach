@@ -1,0 +1,144 @@
+/* Encabezado */
+.module-header {
+  margin: 24px 0 28px 0;
+  .module-tag { font-size: 0.75rem; font-weight: 700; color: var(--ion-color-primary); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; }
+  h2 { font-size: 1.5rem; font-weight: 800; color: var(--ion-text-color); margin: 4px 0 0 0; letter-spacing: -0.02em; }
+  .subtitle { font-size: 0.85rem; color: var(--text-muted); margin: 6px 0 0 0; line-height: 1.45; }
+}
+
+/* Contenedor de la línea de tiempo */
+.history-timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 800px; /* Centra y acota el ancho en web desktop */
+}
+
+/* Tarjeta individual del historial */
+.history-card-item {
+  background: var(--card-bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 10px 20px var(--shadow-color);
+    
+    .action-arrow {
+      color: var(--ion-color-primary);
+      transform: translateX(2px);
+    }
+  }
+
+  &:active { transform: scale(0.99); }
+}
+
+/* Fila Superior */
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .title-block {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    .video-indicator {
+      width: 36px;
+      height: 36px;
+      background: rgba(88, 166, 255, var(--icon-box-opacity));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ion-color-primary);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .text-meta {
+      h3 { font-size: 1rem; font-weight: 700; color: var(--ion-text-color); margin: 0 0 2px 0; letter-spacing: -0.01em; }
+      .date-text { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+    }
+  }
+
+  .rubric-badge {
+    --border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 5px 8px;
+    background: rgba(88, 166, 255, var(--icon-box-opacity));
+    color: var(--ion-color-primary);
+  }
+}
+
+/* Fila Central (Sub-métricas de IA) */
+.card-metrics-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-left: 48px; /* Alinea los tags con el texto del título */
+
+  @media (max-width: 480px) { padding-left: 0; flex-wrap: wrap; gap: 10px; }
+
+  .metric-tag-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-glass);
+    padding: 4px 10px;
+    border-radius: 6px;
+    
+    ion-icon { font-size: 1rem; }
+    span { font-size: 0.78rem; color: var(--text-muted); strong { color: var(--ion-text-color); font-weight: 600; } }
+  }
+}
+
+/* Fila Inferior (Footer de la tarjeta) */
+.card-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-glass);
+  padding-top: 14px;
+  margin-top: 4px;
+
+  .score-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .score-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .score-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ef4444; // Por defecto bajo
+      
+      span { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+      
+      &.high-score { color: var(--ion-color-success); }
+      &.mid-score { color: var(--ion-color-warning); }
+    }
+  }
+
+  .action-arrow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s;
+
+    ion-icon { font-size: 0.9rem; }
+  }
+}

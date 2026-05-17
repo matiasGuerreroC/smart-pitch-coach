@@ -1,0 +1,182 @@
+/* ========================================================
+   CONTENEDOR MAESTRO (LAYOUT RESPONSIVO)
+   ======================================================== */
+.app-layout-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--ion-background-color);
+}
+
+/* Área de contenido principal donde se renderizan las páginas */
+.main-content-viewport {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  overflow-y: auto;
+  background-color: var(--ion-background-color);
+}
+
+/* ========================================================
+   BARRA LATERAL SAAS PREMIUM (DESKTOP)
+   ======================================================== */
+.desktop-sidebar {
+  width: 260px; /* Un pelín más ancho para dar holgura al texto */
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  padding: 32px 16px 24px 16px; /* Más padding superior para que respire el logo */
+  position: relative;
+  z-index: 10;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.01); // Sombra sutilísima casi invisible
+
+  @media (max-width: 768px) {
+    display: none; /* Ocultar completamente en celulares */
+  }
+
+  /* El Logo de la App */
+  .sidebar-logo h2 {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--ion-text-color);
+    margin: 0 0 36px 12px; /* Mayor holgura inferior antes de los links */
+    letter-spacing: -0.04em;
+    
+    span { 
+      color: var(--ion-color-primary); 
+    }
+  }
+
+  /* Contenedor de Enlaces */
+  .sidebar-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* Espaciado balanceado entre botones */
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.88rem;
+      border-radius: 8px; /* Bordes redondeados modernos */
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+      ion-icon { 
+        font-size: 1.15rem; 
+        color: var(--text-muted);
+        transition: color 0.2s ease;
+      }
+      
+      /* Efecto sutil al pasar el mouse por encima */
+      &:hover { 
+        background: var(--bento-hover-bg); 
+        color: var(--ion-text-color);
+        
+        ion-icon {
+          color: var(--ion-text-color);
+        }
+      }
+    }
+
+    /* ESTADO ACTIVO SELECCIONADO: El toque elegante de marca */
+    .active-link {
+      background: rgba(88, 166, 255, var(--icon-box-opacity)) !important; /* Capa translúcida sutil */
+      color: var(--ion-color-primary) !important;
+      font-weight: 600;
+
+      ion-icon { 
+        color: var(--ion-color-primary) !important;
+      }
+    }
+  }
+}
+
+/* ========================================================
+   SECCIÓN DE PERFIL DE USUARIO ANCLADO AL FONDO
+   ======================================================== */
+.sidebar-user-profile {
+  margin-top: auto; /* Truco CSS para empujarlo magnéticamente al fondo */
+  padding-top: 20px;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
+
+  /* Iniciales en círculo simulando avatar */
+  .user-avatar-wrapper {
+    width: 38px;
+    height: 38px;
+    background: var(--ion-color-primary);
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 10px rgba(88, 166, 255, 0.2);
+    flex-shrink: 0;
+  }
+
+  /* Textos informativos de cuenta */
+  .user-info-text {
+    flex-grow: 1;
+    overflow: hidden;
+    
+    h4 { 
+      font-size: 0.88rem; 
+      font-weight: 600; 
+      color: var(--ion-text-color); 
+      margin: 0; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+    
+    p { 
+      font-size: 0.75rem; 
+      color: var(--text-muted); 
+      margin: 2px 0 0 0; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  /* Botón de Logout minimalista */
+  .btn-user-settings {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    
+    &:hover { 
+      color: #ef4444; 
+      background: rgba(239, 68, 68, 0.08); 
+    }
+  }
+}
+
+/* ========================================================
+   BARRA DE NAVEGACIÓN INFERIOR (MÓVIL)
+   ======================================================== */
+.mobile-only-tabbar {
+  @media (min-width: 769px) {
+    display: none; /* Desaparece automáticamente en computadores */
+  }
+}

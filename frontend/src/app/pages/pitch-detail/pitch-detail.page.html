@@ -1,0 +1,101 @@
+<ion-content class="ion-padding" color="background">
+
+  <header class="report-header">
+    <div class="meta-row">
+      <span class="date-badge"><ion-icon name="time-outline"></ion-icon> {{ reporteData.fecha }}</span>
+      <ion-badge color="success" class="premium-badge">PROCESADO</ion-badge>
+    </div>
+    <h2>{{ reporteData.titulo }}</h2>
+    <p class="subtitle">Duración total: {{ reporteData.duracion }}</p>
+  </header>
+
+  <section class="master-score-section">
+    <div class="radial-glow-score">
+      <div class="score-center">
+        <h1>{{ reporteData.scoreGlobal }}</h1>
+        <span>Score Global</span>
+      </div>
+    </div>
+    <div class="score-summary-text">
+      <h4><ion-icon name="sparkles-outline" color="warning"></ion-icon> Diagnóstico General</h4>
+      <p>Tu lenguaje corporal es excelente para convencer al comité de innovación, pero el guion verbal presenta debilidades técnicas según la rúbrica estructurada.</p>
+    </div>
+  </section>
+
+  <ion-segment [(ngModel)]="activeTab" class="custom-segment ion-margin-bottom">
+    <ion-segment-button value="no-verbal">
+      <ion-label><ion-icon name="eye-outline"></ion-icon> No Verbal</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="verbal">
+      <ion-label><ion-icon name="mic-outline"></ion-icon> Verbal</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <div class="tab-content-container" *ngIf="activeTab === 'no-verbal'">
+    
+    <div class="metrics-mini-grid">
+      <div class="mini-card">
+        <span class="label">Contacto Visual</span>
+        <p class="val text-success">{{ reporteData.noVerbal.contactoVisual }}</p>
+      </div>
+      <div class="mini-card">
+        <span class="label">Postura Corporal</span>
+        <p class="val text-indigo">{{ reporteData.noVerbal.postura }}</p>
+      </div>
+    </div>
+
+    <h4 class="section-title-ins">Evidencias Fotograma a Fotograma</h4>
+    
+    <div class="scenes-gallery">
+      <div class="scene-card" *ngFor="let clip of reporteData.noVerbal.anotacionesVideo">
+        
+        <div class="thumbnail-wrapper" (click)="reproducirFragmento(clip.timestamp)">
+          <div class="placeholder-img-glow"></div>
+          <div class="timestamp-tag">{{ clip.timestamp }}</div>
+          <div class="play-overlay">
+            <ion-icon name="play-circle-outline"></ion-icon>
+          </div>
+        </div>
+
+        <div class="scene-body">
+          <div class="card-title-row">
+            <h5>{{ clip.titulo }}</h5>
+            <span class="indicator-dot" [class.alert]="clip.tipo === 'alerta'" [class.success]="clip.tipo === 'exito'"></span>
+          </div>
+          <p>{{ clip.desc }}</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content-container" *ngIf="activeTab === 'verbal'">
+    
+    <div class="metrics-mini-grid">
+      <div class="mini-card">
+        <span class="label">Muletillas Totales</span>
+        <p class="val text-warning">{{ reporteData.verbal.muletillasCount }}</p>
+      </div>
+      <div class="mini-card">
+        <span class="label">Velocidad de Voz</span>
+        <p class="val text-indigo">{{ reporteData.verbal.ritmo }}</p>
+      </div>
+    </div>
+
+    <h4 class="section-title-ins">Análisis Semántico del Discurso</h4>
+
+    <div class="text-insights-list">
+      <div class="text-insight-row" *ngFor="let insight of reporteData.verbal.anotacionesTexto">
+        <div class="timeline-bar-wrapper">
+          <span class="time-bubble">{{ insight.timestamp }}</span>
+          <div class="vertical-line"></div>
+        </div>
+        <div class="insight-content-card">
+          <h5>{{ insight.titulo }}</h5>
+          <p>{{ insight.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

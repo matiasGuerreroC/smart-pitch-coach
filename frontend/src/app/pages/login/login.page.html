@@ -1,0 +1,43 @@
+<ion-content class="ion-padding ion-text-center">
+
+  <div class="auth-centered-container">
+    
+    <header class="auth-brand">
+      <h2>AIPitch<span class="dot">.</span></h2>
+      <p class="subtitle">Ingresa a tu SmartPitch Coach- Tu coach de pitch adaptativo</p>
+    </header>
+
+    <div class="auth-card">
+      <form (ngSubmit)="onLogin()">
+        
+        <div class="input-field-group">
+          <label>Correo Electrónico</label>
+          <div class="input-inner-wrapper">
+            <ion-icon name="mail-outline"></ion-icon>
+            <ion-input type="email" placeholder="nombre@universidad.cl" [(ngModel)]="email" name="email" required class="custom-auth-input"></ion-input>
+          </div>
+        </div>
+
+        <div class="input-field-group">
+          <label>Contraseña</label>
+          <div class="input-inner-wrapper">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            <ion-input type="password" placeholder="••••••••" [(ngModel)]="pass" name="pass" required class="custom-auth-input"></ion-input>
+          </div>
+        </div>
+
+        <ion-button expand="block" type="submit" class="btn-auth-submit">
+          <ion-icon slot="start" name="log-in-outline"></ion-icon>
+          Iniciar Sesión
+        </ion-button>
+
+      </form>
+    </div>
+
+    <footer class="auth-footer">
+      <p>¿No tienes una cuenta? <a routerLink="/register">Regístrate aquí</a></p>
+    </footer>
+
+  </div>
+
+</ion-content>

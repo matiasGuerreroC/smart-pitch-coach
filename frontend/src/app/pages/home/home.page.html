@@ -1,0 +1,84 @@
+<ion-content class="ion-padding" color="background">
+
+  <section class="hero-landing-section">
+
+    <div class="hero-text-content">
+      <header class="main-header">
+        <div class="brand-wrapper">
+          <h2>AIPitch<span class="dot">.</span></h2>
+          <div class="user-status-badge">
+            <span class="pulse-dot"></span>
+            <span class="status-text">Workspace Abierto</span>
+          </div>
+        </div>
+        <h1>Entrena tu Pitch de Innovación con Inteligencia Artificial</h1>
+        <p class="subtitle">
+          Sube tu presentación de 3 minutos. Nuestra IA evaluará tu lenguaje verbal y no verbal en tiempo real,
+          alineando tu discurso con las rúbricas oficiales de ANID y CORFO.
+        </p>
+      </header>
+
+    </div>
+
+    <div class="hero-visual-anchor">
+      <div class="visual-mock-wrapper">
+        <img src="assets/images/pitch_hero.png"
+          alt="Simulación de Análisis de Pitch por Inteligencia Artificial" class="img-responsive-mock" />
+        <div class="glow-behind-image"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tools-grid-container">
+    <h4 class="grid-title">Menú de la Aplicación</h4>
+
+    <div class="bento-grid">
+
+      <div class="bento-card text-optimizer" routerLink="/tabs/text-optimizer">
+        <div class="card-icon-wrapper color-purple">
+          <ion-icon name="document-text-outline"></ion-icon>
+        </div>
+        <div class="card-body">
+          <h3>Optimizar Discurso</h3>
+          <p>Mejora la estructura de tu guion con IA antes de encender la cámara.</p>
+        </div>
+        <span class="action-tag">Redactar →</span>
+      </div>
+
+      <div class="bento-card video-analyzer highlight-card" routerLink="/tabs/recorder">
+        <div class="card-icon-wrapper color-indigo">
+          <ion-icon name="videocam-outline"></ion-icon>
+        </div>
+        <div class="card-body">
+          <h3>Analizar Video Pitch</h3>
+          <p>Graba o sube tu pitch de 3 minutos para evaluar contacto visual y muletillas.</p>
+        </div>
+        <span class="action-tag">Evaluar →</span>
+      </div>
+
+      <div class="bento-card rubric-manager" routerLink="/tabs/rubrics">
+        <div class="card-icon-wrapper color-amber">
+          <ion-icon name="ribbon-outline"></ion-icon>
+        </div>
+        <div class="card-body">
+          <h3>Bases y Rúbricas</h3>
+          <p>Configura los criterios específicos (VIU ANID, CORFO) para el entrenamiento.</p>
+        </div>
+        <span class="action-tag">Configurar →</span>
+      </div>
+
+      <div class="bento-card feedback-dashboard" routerLink="/tabs/history">
+        <div class="card-icon-wrapper color-emerald">
+          <ion-icon name="stats-chart-outline"></ion-icon>
+        </div>
+        <div class="card-body">
+          <h3>Panel de Feedback</h3>
+          <p>Revisa el historial de ensayos, evolución de puntajes y anotaciones de video.</p>
+        </div>
+        <span class="action-tag">Ver Reportes →</span>
+      </div>
+
+    </div>
+  </section>
+
+</ion-content>
