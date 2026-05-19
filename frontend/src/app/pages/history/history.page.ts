@@ -8,7 +8,7 @@ import {
 import { addIcons } from 'ionicons';
 import { 
   timeOutline, eyeOutline, micOutline, arrowForwardOutline, 
-  videocamOutline, calendarOutline, chevronForwardOutline 
+  videocamOutline, calendarOutline, chevronForwardOutline, trendingUpOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -57,7 +57,7 @@ export class HistoryPage implements OnInit {
   constructor() {
     addIcons({
       timeOutline, eyeOutline, micOutline, arrowForwardOutline,
-      videocamOutline, calendarOutline, chevronForwardOutline
+      videocamOutline, calendarOutline, chevronForwardOutline, trendingUpOutline
     });
   }
 
