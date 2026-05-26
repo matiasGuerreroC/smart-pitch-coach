@@ -4,11 +4,12 @@ Proyecto para analizar y dar feedback a pitches en video usando modelos de IA.
 
 Estructura principal:
 - [backend](backend/): API en FastAPI que procesa videos/pitches.
-- [frontend](frontend/): cliente Ionic/Angular (interfaz de usuario).
+- [frontend-aipitch](frontend-aipitch/): frontend Next.js (interfaz actual).
 
 Requisitos rápidos:
 - Python 3.10+
-- `ffmpeg` disponible en PATH (necesario para extraer/normalizar audio)
+- Node.js 18+ (para el frontend Next.js)
+- `ffmpeg` en PATH (opcional si usas `imageio-ffmpeg` del backend)
 
 Quick start (backend):
 
@@ -36,4 +37,15 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
 La API de backend tendrá una página de debug en `http://127.0.0.1:8000/debug`.
 
-Si quieres ejecutar el frontend, revisa [frontend/README.md](frontend/README.md) para instrucciones.
+Quick start (frontend Next.js):
+
+```bash
+cd frontend-aipitch
+npm install
+npm run dev
+```
+
+Abre `http://localhost:3000`.
+
+Si quieres ejecutar el frontend legacy (Ionic/Angular), revisa [frontendold/README.md](frontendold/README.md).
+Para el frontend actual, revisa [frontend-aipitch/README.md](frontend-aipitch/README.md).
