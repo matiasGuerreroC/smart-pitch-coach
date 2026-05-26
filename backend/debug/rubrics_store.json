@@ -1,0 +1,23 @@
+{
+  "1": {
+    "id": "1",
+    "name": "Y Combinator Standard",
+    "description": "Criteria based on YC 2-minute standard."
+  },
+  "2": {
+    "id": "2",
+    "name": "Enterprise B2B",
+    "description": "For enterprise cold calling."
+  },
+  "8dde1cd5-8153-4984-a6c7-86269ee3f69b": {
+    "id": "8dde1cd5-8153-4984-a6c7-86269ee3f69b",
+    "name": "Rúbrica de bases_generales__crea_y_desarrolla_2026.pdf",
+    "description": "Hola Rúbrica generada con 4 criterios.",
+    "criteria": [
+      "Claridad del problema",
+      "Tamaño del mercado",
+      "Tracción actual o demo del producto",
+      "Call to action claro"
+    ]
+  }
+}
