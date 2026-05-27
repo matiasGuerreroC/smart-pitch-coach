@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import uuid
 from datetime import datetime
-from typing import Any, Dict
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from typing import Any, Dict, Optional
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
+import imageio_ffmpeg
 import google.generativeai as genai
 import yt_dlp
 from fastapi.responses import FileResponse
@@ -31,6 +34,14 @@ gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
 app = FastAPI(title="AIPitch - Backend MVP")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Obtener ruta del directorio actual
 BASE_DIR = Path(__file__).resolve().parent
 DEBUG_DIR = BASE_DIR / "debug"
@@ -42,10 +53,163 @@ class PitchRequest(BaseModel):
 
 class AnalysisStartRequest(BaseModel):
     youtube_url: str
+    rubric_id: Optional[str] = None
+
+
+class RubricCreateRequest(BaseModel):
+    name: str
+    description: str
+    criteria: Optional[list[str]] = None
 
 
 ANALYSIS_SESSIONS: Dict[str, Dict[str, Any]] = {}
 URL_TO_ANALYSIS_ID: Dict[str, str] = {}
+ANALYSIS_HISTORY: Dict[str, Dict[str, Any]] = {}
+RUBRICS_STORE: Dict[str, Dict[str, str]] = {
+    "1": {"id": "1", "name": "Y Combinator Standard", "description": "Criteria based on YC 2-minute standard."},
+    "2": {"id": "2", "name": "Enterprise B2B", "description": "For enterprise cold calling."},
+}
+HISTORY_PATH = DEBUG_DIR / "analysis_history.json"
+RUBRICS_PATH = DEBUG_DIR / "rubrics_store.json"
+
+
+def _load_history_from_disk() -> Dict[str, Dict[str, Any]]:
+    if not HISTORY_PATH.exists():
+        return {}
+    try:
+        with open(HISTORY_PATH, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+        if isinstance(raw, dict):
+            return raw
+    except Exception as exc:
+        print(f"No se pudo cargar history: {exc}")
+    return {}
+
+
+def _persist_history_to_disk() -> None:
+    try:
+        with open(HISTORY_PATH, "w", encoding="utf-8") as handle:
+            json.dump(ANALYSIS_HISTORY, handle, ensure_ascii=False, indent=2)
+    except Exception as exc:
+        print(f"No se pudo guardar history: {exc}")
+
+
+def _load_rubrics_from_disk() -> Dict[str, Dict[str, Any]]:
+    if not RUBRICS_PATH.exists():
+        return {}
+    try:
+        with open(RUBRICS_PATH, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+        if isinstance(raw, dict):
+            return raw
+    except Exception as exc:
+        print(f"No se pudo cargar rubricas: {exc}")
+    return {}
+
+
+def _persist_rubrics_to_disk() -> None:
+    try:
+        with open(RUBRICS_PATH, "w", encoding="utf-8") as handle:
+            json.dump(RUBRICS_STORE, handle, ensure_ascii=False, indent=2)
+    except Exception as exc:
+        print(f"No se pudo guardar rubricas: {exc}")
+
+
+ANALYSIS_HISTORY.update(_load_history_from_disk())
+RUBRICS_STORE.update(_load_rubrics_from_disk())
+
+def _extract_score_from_content(content_evaluation: Optional[str]) -> int:
+    if not content_evaluation:
+        return 0
+    try:
+        start = content_evaluation.find("{")
+        end = content_evaluation.rfind("}")
+        if start == -1 or end == -1:
+            return 0
+        payload = json.loads(content_evaluation[start:end + 1])
+        score = payload.get("puntaje_global")
+        return int(score) if isinstance(score, (int, float, str)) and str(score).isdigit() else 0
+    except Exception:
+        return 0
+
+
+def _save_analysis_record(analysis_id: str, video_metadata: Dict[str, Any], source_url: str, rubric_id: Optional[str]) -> None:
+    rubric_name = RUBRICS_STORE.get(rubric_id or "", {}).get("name")
+    ANALYSIS_HISTORY[analysis_id] = {
+        "analysis_id": analysis_id,
+        "title": video_metadata.get("title", ""),
+        "created_at": datetime.utcnow().isoformat(),
+        "source_url": source_url,
+        "rubric_id": rubric_id,
+        "rubric_name": rubric_name,
+        "status": "created",
+        "steps": {},
+        "score": 0,
+    }
+    _persist_history_to_disk()
+
+def _update_analysis_steps(analysis_id: str, steps: Dict[str, Any]) -> None:
+    if analysis_id in ANALYSIS_HISTORY:
+        ANALYSIS_HISTORY[analysis_id]["steps"] = steps
+        all_done = all(steps.get(key) for key in ["transcription", "verbal_metrics", "content", "nonverbal"])
+        ANALYSIS_HISTORY[analysis_id]["status"] = "completed" if all_done else "processing"
+        session = ANALYSIS_SESSIONS.get(analysis_id)
+        if session:
+            ANALYSIS_HISTORY[analysis_id]["score"] = _extract_score_from_content(session.get("content_evaluation"))
+            if not ANALYSIS_HISTORY[analysis_id].get("title"):
+                ANALYSIS_HISTORY[analysis_id]["title"] = session.get("video_metadata", {}).get("title", "")
+        _persist_history_to_disk()
+
+def _list_analysis_records() -> list[Dict[str, Any]]:
+    records = list(ANALYSIS_HISTORY.values())
+    return sorted(records, key=lambda r: r.get("created_at", ""), reverse=True)
+
+# ============================================================================
+# RUBRICAS
+# ============================================================================
+
+@app.get("/api/v1/rubrics")
+async def get_rubrics():
+    return list(RUBRICS_STORE.values())
+
+
+@app.post("/api/v1/rubrics")
+async def create_rubric(payload: RubricCreateRequest):
+    rubric_id = str(uuid.uuid4())
+    RUBRICS_STORE[rubric_id] = {
+        "id": rubric_id,
+        "name": payload.name.strip() or "Rúbrica sin nombre",
+        "description": payload.description.strip() or "Rúbrica generada por IA.",
+        "criteria": payload.criteria or [],
+    }
+    _persist_rubrics_to_disk()
+    return RUBRICS_STORE[rubric_id]
+
+@app.post("/api/v1/rubrics/extract")
+async def extract_rubrics(file: UploadFile = File(...)):
+    # Simulación de extracción para no bloquear el flujo
+    return {
+        "name": f"Rúbrica de {file.filename}",
+        "suggestedCriteria": [
+            "Claridad del problema",
+            "Tamaño del mercado",
+            "Tracción actual o demo del producto",
+            "Call to action claro"
+        ]
+    }
+
+
+@app.get("/api/v1/analysis")
+async def list_analysis_history():
+    return _list_analysis_records()
+
+
+@app.get("/api/v1/analysis/history/{analysis_id}")
+async def get_analysis_history_detail(analysis_id: str):
+    record = ANALYSIS_HISTORY.get(analysis_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="analysis_id no encontrado")
+    return record
 
 # ============================================================================
 # RUTAS DEBUG Y RAÍZ
@@ -116,6 +280,7 @@ async def start_analysis(request: AnalysisStartRequest):
 
     ANALYSIS_SESSIONS[analysis_id] = session
     URL_TO_ANALYSIS_ID[request.youtube_url] = analysis_id
+    _save_analysis_record(analysis_id, video_metadata, request.youtube_url, request.rubric_id)
     return _build_step_response(session, "Sesión creada. Ejecuta los pasos manualmente")
 
 
@@ -130,6 +295,7 @@ async def run_transcription(analysis_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    _update_analysis_steps(analysis_id, session["steps"])
     return _build_step_response(session, "Paso transcripción completado" if not cached else "Paso transcripción en caché", cached=cached)
 
 
@@ -144,6 +310,7 @@ async def run_verbal_metrics(analysis_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    _update_analysis_steps(analysis_id, session["steps"])
     return _build_step_response(session, "Paso métricas verbales completado" if not cached else "Paso métricas verbales en caché", cached=cached)
 
 
@@ -161,6 +328,7 @@ async def run_verbal_legacy(analysis_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    _update_analysis_steps(analysis_id, session["steps"])
     return _build_step_response(session, "Paso verbal legacy completado" if not cached else "Paso verbal legacy en caché", cached=cached)
 
 
@@ -175,6 +343,7 @@ async def run_content(analysis_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    _update_analysis_steps(analysis_id, session["steps"])
     return _build_step_response(session, "Paso contenido completado" if not cached else "Paso contenido en caché", cached=cached)
 
 
@@ -189,13 +358,41 @@ async def run_nonverbal(analysis_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    _update_analysis_steps(analysis_id, session["steps"])
     return _build_step_response(session, "Paso no verbal completado" if not cached else "Paso no verbal en caché", cached=cached)
 
 
 @app.get("/api/v1/analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    return _build_step_response(session, "Estado actual de la sesión")
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    if session:
+        return _build_step_response(session, "Estado actual de la sesión")
+
+    history = ANALYSIS_HISTORY.get(analysis_id)
+    if not history:
+        raise HTTPException(status_code=404, detail="analysis_id no encontrado")
+
+    steps = history.get("steps") or {}
+    return {
+        "status": "success",
+        "message": "Sesión no activa; devolviendo historial guardado",
+        "analysis_id": analysis_id,
+        "cached": True,
+        "steps": steps,
+        "next_step": None,
+        "data": {
+            "video_metadata": {
+                "title": history.get("title", ""),
+                "webpage_url": history.get("source_url", ""),
+            },
+            "transcription": None,
+            "transcription_segments": [],
+            "transcription_words": [],
+            "verbal_metrics": None,
+            "content_evaluation": None,
+            "nonverbal_evaluation": None,
+        },
+    }
 
 
 @app.delete("/api/v1/analysis/{analysis_id}")
@@ -428,8 +625,9 @@ def download_audio_from_youtube(url: str, output_filename: str = "temp_audio"):
 
 def normalize_audio_for_whisper(source_path: str) -> str:
     normalized_path = source_path.replace(".wav", ".whisper.mp3") # <--- Cambiado a mp3
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     command =[
-        "ffmpeg",
+        ffmpeg_exe,
         "-y",
         "-i", source_path,
         "-ac", "1",           # 1 Canal (Mono)
@@ -475,8 +673,9 @@ def download_video_from_youtube(url: str, output_filename: str = "temp_video") -
 def extract_audio_from_video(video_path: str, output_filename: str = "temp_audio") -> str:
     """Extrae el audio del video local a WAV (pcm_s16le) usando ffmpeg."""
     out_path = f"{output_filename}.wav"
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     command = [
-        "ffmpeg",
+        ffmpeg_exe,
         "-y",
         "-i",
         str(video_path),
@@ -742,8 +941,25 @@ async def analyze_pitch(request: PitchRequest):
             os.remove(raw_video_path)
 
 
+def _run_all_steps_bg(analysis_id: str):
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    if not session:
+        return
+    try:
+        if not session["steps"].get("transcription"):
+            _run_transcription_step(session)
+        if not session["steps"].get("verbal_metrics"):
+            _run_verbal_metrics_step(session)
+        if not session["steps"].get("content"):
+            _run_content_step(session)
+        if not session["steps"].get("nonverbal"):
+            _run_nonverbal_step(session)
+        _update_analysis_steps(analysis_id, session["steps"])
+    except Exception as e:
+        print(f"Error procesando pasos en segundo plano: {e}")
+
 @app.post("/api/v1/analysis/upload")
-async def start_analysis_upload(file: UploadFile = File(...)):
+async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadFile = File(...), rubricId: str = Form(None)):
     """Crear una sesión de análisis a partir de un video subido localmente."""
     analysis_id = str(uuid.uuid4())
     suffix = Path(file.filename).suffix or ".mp4"
@@ -798,7 +1014,12 @@ async def start_analysis_upload(file: UploadFile = File(...)):
         }
 
         ANALYSIS_SESSIONS[analysis_id] = session
-        return _build_step_response(session, "Sesión creada desde archivo local. Ejecuta los pasos manualmente.")
+        _save_analysis_record(analysis_id, video_metadata, f"local://{file.filename}", rubricId)
+        
+        # Correr análisis automáticamente
+        background_tasks.add_task(_run_all_steps_bg, analysis_id)
+
+        return _build_step_response(session, "Sesión creada desde archivo local. Análisis en proceso...")
 
     except Exception as e:
         # Intentar eliminar archivos si algo falla

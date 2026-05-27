@@ -1,0 +1,36 @@
+{
+  "eda694f1-7f07-43b0-b482-f513f550e748": {
+    "analysis_id": "eda694f1-7f07-43b0-b482-f513f550e748",
+    "title": "IMG_6142.MOV",
+    "created_at": "2026-05-26T23:01:12.761363",
+    "source_url": "local://IMG_6142.MOV",
+    "rubric_id": "1",
+    "rubric_name": "Y Combinator Standard",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 65
+  },
+  "3e2f3f57-a33e-4465-b997-e9840ccc1ba8": {
+    "analysis_id": "3e2f3f57-a33e-4465-b997-e9840ccc1ba8",
+    "title": "IMG_6142.MOV",
+    "created_at": "2026-05-26T23:11:11.157181",
+    "source_url": "local://IMG_6142.MOV",
+    "rubric_id": "8dde1cd5-8153-4984-a6c7-86269ee3f69b",
+    "rubric_name": "Rúbrica de bases_generales__crea_y_desarrolla_2026.pdf",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 68
+  }
+}
