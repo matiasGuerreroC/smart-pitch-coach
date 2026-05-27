@@ -13,6 +13,7 @@ export default function RubricsPage() {
   const [rubricName, setRubricName] = useState('');
   const [rubricDescription, setRubricDescription] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [rubricId, setRubricId] = useState<string | null>(null);
 
   useEffect(() => {
     api.getRubrics().then(setRubrics);
@@ -35,6 +36,7 @@ export default function RubricsPage() {
     // Llamamos al servicio (que simula el LLM procesando el PDF/Excel)
     try {
       const data = await api.uploadRubricFile(file);
+      setRubricId(data.id);
       setExtractedData(data);
       setRubricName(data.name || 'Rúbrica generada');
       setRubricDescription(`Rúbrica generada con ${data.suggestedCriteria.length} criterios.`);
@@ -50,6 +52,7 @@ export default function RubricsPage() {
     if (!extractedData) return;
     try {
       await api.saveRubric({
+        id: rubricId ?? undefined,
         name: rubricName.trim() || extractedData.name,
         description: rubricDescription.trim() || 'Rúbrica generada por IA.',
         criteria: extractedData.suggestedCriteria,

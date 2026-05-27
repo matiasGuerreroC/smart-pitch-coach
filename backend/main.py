@@ -63,6 +63,7 @@ class AnalysisStartRequest(BaseModel):
     rubric_id: Optional[str] = None
 
 class RubricCreateRequest(BaseModel):
+    id: Optional[str] = None
     name: str
     description: str
     criteria: Optional[list[str]] = None
@@ -164,17 +165,108 @@ def get_embedding(texto: str) -> list[float]:
     )
     return response.embeddings[0].values
 
+def seed_default_rubrics(db: Session):
+    """Inyecta las rúbricas base leyendo los PDFs ORIGINALES si la BD está vacía"""
+    if db.query(Rubrica).first():
+        return # Ya existen en Neon, no hacemos nada
+        
+    # Creamos una carpeta para los PDFs oficiales si no existe
+    rubricas_dir = BASE_DIR / "rubricas_oficiales"
+    if not rubricas_dir.exists():
+        rubricas_dir.mkdir()
+        print(f"⚠️ Carpeta '{rubricas_dir.name}' creada. Pon los PDFs oficiales ahí y reinicia el servidor para vectorizarlos.")
+        return
+
+    # Definimos los archivos que el sistema buscará en esa carpeta
+    archivos_oficiales = [
+        {
+            "id": "anid_viu_2026",
+            "filename": "bases_anid_viu_2026.pdf",
+            "name": "ANID VIU 2026",
+            "description": "✅ Documento Oficial por defecto (No eliminable)."
+        },
+        {
+            "id": "crea_y_desarrolla",
+            "name": "Crea y Desarrolla PUCV",
+            "filename": "bases_crea_y_desarrolla_2026.pdf",
+            "description": "✅ Documento Oficial por defecto (No eliminable)."
+        }
+    ]
+    
+    for item in archivos_oficiales:
+        pdf_path = rubricas_dir / item["filename"]
+        if not pdf_path.exists():
+            print(f"⚠️ Faltan las bases oficiales: No se encontró '{item['filename']}' en la carpeta rubricas_oficiales.")
+            continue # Saltamos este archivo si no está
+            
+        print(f"Leyendo y vectorizando PDF original: {item['filename']}...")
+        
+        # 1. Leer el PDF completo
+        texto_completo = ""
+        doc = fitz.open(str(pdf_path))
+        for page in doc: 
+            texto_completo += page.get_text("text") + "\n"
+        doc.close()
+
+        # 2. Cortarlo en chunks de 1500 caracteres
+        chunks = [texto_completo[i:i+1500] for i in range(0, len(texto_completo), 1500)]
+        
+        # 3. Guardar en BD
+        db.add(Rubrica(id=item["id"], name=item["name"], description=item["description"], is_default=True))
+        
+        # 4. Vectorizar cada chunk con Rate Limiter manual (para no explotar Gemini)
+        for i, chunk in enumerate(chunks):
+            for intento in range(3):
+                try:
+                    vector = get_embedding(chunk)
+                    db.add(RubricaChunk(rubric_id=item["id"], texto=chunk, embedding=vector))
+                    time.sleep(1.5) # Respiro a la API
+                    print(f"   -> {item['name']}: Fragmento {i+1}/{len(chunks)} vectorizado.")
+                    break
+                except Exception as e:
+                    if "429" in str(e):
+                        print(f"⚠️ Ráfaga detectada por Google. Esperando 15s... (Intento {intento+1}/3)")
+                        time.sleep(15)
+                    else:
+                        raise e
+                        
+        db.commit()
+        print(f"✅ Rúbrica '{item['name']}' inyectada con éxito en Neon DB.")
+
+# Ejecutar el seed al iniciar FastAPI
+try:
+    with next(get_db()) as db_session:
+        seed_default_rubrics(db_session)
+except Exception as e:
+    print(f"Error al conectar con la BD Vectorial en Neon: {e}")
+
 @app.get("/api/v1/rubrics")
 async def get_rubrics(db: Session = Depends(get_db)):
-    """Devuelve la lista de rúbricas reales desde Neon DB"""
-    rubricas_db = db.query(Rubrica).all()
-    return [{"id": r.id, "name": r.name, "description": r.description} for r in rubricas_db]
+    """Devuelve la lista de rúbricas (Oficiales primero, luego las de usuarios)"""
+    # Ordenamos para que las is_default salgan primero arriba en la pantalla
+    rubricas_db = db.query(Rubrica).order_by(Rubrica.is_default.desc()).all()
+    return [{
+        "id": r.id, 
+        "name": r.name, 
+        "description": r.description, 
+        "is_default": r.is_default
+    } for r in rubricas_db]
 
 @app.post("/api/v1/rubrics")
 async def create_rubric(payload: RubricCreateRequest, db: Session = Depends(get_db)):
-    """Mantiene la compatibilidad con el front de Nico para rúbricas manuales"""
+    """Si viene con ID (del PDF extraído), actualiza nombre/desc. Si no, lo crea manual."""
+    # 1. Si Nico manda el ID del PDF que acabamos de extraer
+    if payload.id:
+        rubrica_existente = db.query(Rubrica).filter(Rubrica.id == payload.id).first()
+        if rubrica_existente:
+            rubrica_existente.name = payload.name.strip()
+            rubrica_existente.description = payload.description.strip()
+            db.commit()
+            return {"id": rubrica_existente.id, "name": rubrica_existente.name, "is_default": rubrica_existente.is_default}
+    
+    # 2. Si no trae ID, es una rúbrica manual creada desde cero
     rubric_id = str(uuid.uuid4())
-    db.add(Rubrica(id=rubric_id, name=payload.name.strip(), description=payload.description.strip()))
+    db.add(Rubrica(id=rubric_id, name=payload.name.strip(), description=payload.description.strip(), is_default=False))
     
     texto_criterios = " ".join(payload.criteria or [])
     if texto_criterios:
@@ -182,7 +274,20 @@ async def create_rubric(payload: RubricCreateRequest, db: Session = Depends(get_
         db.add(RubricaChunk(rubric_id=rubric_id, texto=texto_criterios, embedding=vector))
         
     db.commit()
-    return {"id": rubric_id, "name": payload.name, "description": payload.description}
+    return {"id": rubric_id, "name": payload.name, "is_default": False}
+
+@app.delete("/api/v1/rubrics/{rubric_id}")
+async def delete_rubric(rubric_id: str, db: Session = Depends(get_db)):
+    """Permite borrar rúbricas, protegiendo las bases oficiales"""
+    rubrica = db.query(Rubrica).filter(Rubrica.id == rubric_id).first()
+    if not rubrica:
+        raise HTTPException(status_code=404, detail="Rúbrica no encontrada")
+    if rubrica.is_default:
+        raise HTTPException(status_code=403, detail="Las bases oficiales no pueden ser eliminadas.")
+        
+    db.delete(rubrica) # Borra en cascada la rúbrica y sus vectores
+    db.commit()
+    return {"status": "success"}
 
 @app.post("/api/v1/rubrics/extract")
 async def extract_rubrics(file: UploadFile = File(...), db: Session = Depends(get_db)):
