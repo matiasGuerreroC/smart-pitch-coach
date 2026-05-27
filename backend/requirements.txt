@@ -8,4 +8,7 @@ opencv-python
 Pillow
 SQLAlchemy
 psycopg2-binary
-imageio-ffmpeg
+imageio-ffmpeg 
+psycopg2-binary
+pgvector
+sqlalchemy
