@@ -6,19 +6,26 @@ import subprocess
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
 import imageio_ffmpeg
-import google.generativeai as genai
+from google import genai
 import yt_dlp
 from fastapi.responses import FileResponse
 from pathlib import Path
 import cv2
 from PIL import Image
 
+from sqlalchemy.orm import Session
+import fitz
+import docx
+# from vectorialDB import init_db, get_db, Concurso, RubricaText
+
+# Inicializar la Base de Datos Local al arrancar
+# init_db()
 
 # Cargar variables de entorno
 
@@ -28,11 +35,13 @@ load_dotenv()
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # 2. Inicializar cliente de Gemini (Cognitivo)
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-# Usamos flash porque es ultrarrápido y barato
-gemini_model = genai.GenerativeModel('gemini-2.5-flash') 
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(title="AIPitch - Backend MVP")
+
+# ============================================================================
+# CONFIGURACIÓN CORS
+# ============================================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -562,7 +571,7 @@ def _run_content_step(session: Dict[str, Any]) -> None:
     Texto del pitch:
     \"{session['transcription']}\"
     """
-    respuesta_gemini = gemini_model.generate_content(prompt_evaluador)
+    respuesta_gemini = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt_evaluador)
     session["content_evaluation"] = respuesta_gemini.text
     session["steps"]["content"] = True
 
@@ -783,7 +792,10 @@ def analyze_nonverbal_with_gemini(video_path: str) -> dict:
         {frame_notes}
         """.strip()
 
-        response = gemini_model.generate_content([prompt_no_verbal, *[frame["image"] for frame in sampled_frames]])
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt_no_verbal, *[frame["image"] for frame in sampled_frames]]
+        )
         return {
             "available": True,
             "frames_sampled": len(sampled_frames),
@@ -909,7 +921,10 @@ async def analyze_pitch(request: PitchRequest):
         """
         
         # Llamada a la API de Gemini
-        respuesta_gemini = gemini_model.generate_content(prompt_evaluador)
+        respuesta_gemini = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt_evaluador
+        )
         evaluacion_contenido = respuesta_gemini.text
         
         # TODO: 4. DIMENSIÓN NO VERBAL (Postura/Manos) - Próximo paso
