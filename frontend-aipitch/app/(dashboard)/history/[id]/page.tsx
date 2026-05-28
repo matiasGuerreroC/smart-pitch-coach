@@ -15,6 +15,13 @@ export default function PitchDetailPage() {
   const [activeTab, setActiveTab] = useState<TabType>('content');
   const [isFallback, setIsFallback] = useState(false);
 
+  const evolution = pitch?.evolutionMetrics;
+
+  const formatDelta = (value: number, unit: string) => {
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${value} ${unit}`;
+  };
+
   useEffect(() => {
     if (id) {
       api.getAnalysisDetail(id as string)
@@ -39,6 +46,51 @@ export default function PitchDetailPage() {
           <div className="text-3xl font-extrabold text-blue-600">{pitch.score}</div>
           <div className="text-xs font-medium text-blue-500 uppercase tracking-wider">Puntaje Global</div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="md:col-span-4 border-dashed border-slate-200 bg-slate-50/80">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Métricas evolutivas</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Comparación contra el pitch inmediatamente anterior.
+              </p>
+            </div>
+            {evolution?.previousId ? (
+              <span className="text-xs font-medium text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+                Anterior: {evolution.previousId}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+            <div className="rounded-2xl bg-white border border-slate-200 p-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Δ Puntaje Global</div>
+              <div className={`text-2xl font-bold mt-2 ${((evolution?.deltaScore ?? 0) >= 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {formatDelta(evolution?.deltaScore ?? 0, 'pts')}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-200 p-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Δ Palabras por minuto</div>
+              <div className={`text-2xl font-bold mt-2 ${((evolution?.deltaWpm ?? 0) >= 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {formatDelta(evolution?.deltaWpm ?? 0, 'PPM')}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-200 p-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Δ Muletillas</div>
+              <div className={`text-2xl font-bold mt-2 ${((evolution?.deltaFillers ?? 0) <= 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {formatDelta(evolution?.deltaFillers ?? 0, 'menciones')}
+              </div>
+            </div>
+          </div>
+
+          {!evolution?.previousId && (
+            <p className="text-sm text-slate-500 mt-4">
+              No hay un análisis anterior para comparar, por lo que estas métricas aparecen en cero.
+            </p>
+          )}
+        </Card>
       </div>
 
       {/* Tabs Selector Navigation */}

@@ -153,6 +153,74 @@ def _list_analysis_records() -> list[Dict[str, Any]]:
     records = list(ANALYSIS_HISTORY.values())
     return sorted(records, key=lambda r: r.get("created_at", ""), reverse=True)
 
+def _extract_wpm_from_verbal_metrics(verbal_metrics: Any) -> int:
+    if not isinstance(verbal_metrics, dict):
+        return 0
+    value = verbal_metrics.get("palabras_por_minuto", 0)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+def _extract_fillers_from_verbal_metrics(verbal_metrics: Any) -> int:
+    if not isinstance(verbal_metrics, dict):
+        return 0
+    value = verbal_metrics.get("cantidad_muletillas", 0)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+def _normalize_analysis_name(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+def _calculate_evolution_metrics(current_analysis_id: str) -> Dict[str, Any]:
+    try:
+        records = _list_analysis_records()
+        if not records:
+            return {}
+
+        current_record = ANALYSIS_HISTORY.get(current_analysis_id) or ANALYSIS_SESSIONS.get(current_analysis_id)
+        if not current_record:
+            return {}
+
+        current_name = _normalize_analysis_name(current_record.get("title") or current_record.get("video_metadata", {}).get("title"))
+        if not current_name:
+            return {}
+
+        same_name_records = [
+            record
+            for record in sorted(records, key=lambda record: record.get("created_at", ""))
+            if _normalize_analysis_name(record.get("title")) == current_name
+        ]
+
+        current_index = next(
+            (index for index, record in enumerate(same_name_records) if record.get("analysis_id") == current_analysis_id),
+            None,
+        )
+
+        if current_index is None or current_index == 0:
+            return {}
+
+        previous_record = same_name_records[current_index - 1]
+
+        current_score = int(current_record.get("score") or 0)
+        previous_score = int(previous_record.get("score") or 0)
+        current_wpm = _extract_wpm_from_verbal_metrics(current_record.get("verbal_metrics"))
+        previous_wpm = _extract_wpm_from_verbal_metrics(previous_record.get("verbal_metrics"))
+        current_fillers = _extract_fillers_from_verbal_metrics(current_record.get("verbal_metrics"))
+        previous_fillers = _extract_fillers_from_verbal_metrics(previous_record.get("verbal_metrics"))
+
+        return {
+            "delta_score": current_score - previous_score,
+            "delta_wpm": current_wpm - previous_wpm,
+            "delta_fillers": current_fillers - previous_fillers,
+            "previous_id": previous_record.get("analysis_id", ""),
+        }
+    except Exception as exc:
+        print(f"No se pudieron calcular métricas evolutivas para {current_analysis_id}: {exc}")
+        return {}
+
 # ============================================================================
 # RAG: GESTOR DE RÚBRICAS VECTORIALES (NEON DB)
 # ============================================================================
@@ -645,7 +713,8 @@ async def get_analysis(analysis_id: str):
             "steps": s.get("steps", {}), 
             "data": {
                 "video_metadata": {"title": s.get("title", "")}, 
-                "content_evaluation": historial_content_string # <--- AHORA ES UN STRING
+                "content_evaluation": historial_content_string, # <--- AHORA ES UN STRING
+                "evolution_metrics": _calculate_evolution_metrics(analysis_id)
             }
         }
         
@@ -658,7 +727,8 @@ async def get_analysis(analysis_id: str):
             "transcription_segments": s.get("transcription_segments"), 
             "verbal_metrics": s.get("verbal_metrics"), 
             "content_evaluation": s.get("content_evaluation"), 
-            "nonverbal_evaluation": s.get("nonverbal_evaluation")
+            "nonverbal_evaluation": s.get("nonverbal_evaluation"),
+            "evolution_metrics": _calculate_evolution_metrics(analysis_id)
         }
     }
 

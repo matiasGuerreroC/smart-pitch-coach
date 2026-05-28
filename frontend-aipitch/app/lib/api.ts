@@ -61,6 +61,12 @@ type SessionResponse = {
     } | null;
     content_evaluation?: string | null;
     nonverbal_evaluation?: { analysis?: string | null } | null;
+    evolution_metrics?: {
+      delta_score?: number;
+      delta_wpm?: number;
+      delta_fillers?: number;
+      previous_id?: string;
+    } | null;
   };
 };
 
@@ -82,6 +88,7 @@ function mapHistoryDetail(record: HistoryRecord): Analysis {
     verbalMetrics: undefined,
     contentFeedback: undefined,
     nonVerbalFeedback: undefined,
+    evolutionMetrics: undefined,
   };
 }
 
@@ -102,6 +109,14 @@ function mapSessionResponse(payload: SessionResponse): Analysis {
       : undefined,
     contentFeedback: payload.data?.content_evaluation || undefined,
     nonVerbalFeedback: payload.data?.nonverbal_evaluation?.analysis || undefined,
+    evolutionMetrics: payload.data?.evolution_metrics
+      ? {
+          deltaScore: payload.data.evolution_metrics.delta_score ?? 0,
+          deltaWpm: payload.data.evolution_metrics.delta_wpm ?? 0,
+          deltaFillers: payload.data.evolution_metrics.delta_fillers ?? 0,
+          previousId: payload.data.evolution_metrics.previous_id ?? '',
+        }
+      : undefined,
   };
 }
 

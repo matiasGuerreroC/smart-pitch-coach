@@ -14,6 +14,12 @@ export interface Analysis {
   };
   contentFeedback?: string; // mapeamos las recomendaciones del LLM
   nonVerbalFeedback?: string;
+  evolutionMetrics?: {
+    deltaScore: number;
+    deltaWpm: number;
+    deltaFillers: number;
+    previousId: string;
+  };
 }
 
 export interface Rubric {
