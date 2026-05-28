@@ -539,11 +539,13 @@ def _run_content_step(session: Dict[str, Any]) -> None:
     <BASES> {contexto_rag} </BASES>
     Evalúa este pitch en JSON con: puntaje_global(1-100), puntos_fuertes(2), puntos_debiles(2), recomendacion. Pitch: "{session['transcription']}" """
     
-    import time
     for intento in range(3):
         try:
             resp = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-            session["content_evaluation"] = json.loads(resp.text.replace("```json", "").replace("```", "").strip())
+            texto_limpio = resp.text.replace("```json", "").replace("```", "").strip()
+            
+            # Guardamos como STRING puro para respetar el contrato del Frontend de Nico
+            session["content_evaluation"] = texto_limpio 
             session["steps"]["content"] = True
             return
         except Exception as e:
@@ -600,9 +602,33 @@ async def get_analysis(analysis_id: str):
     s = ANALYSIS_SESSIONS.get(analysis_id)
     if not s: 
         s = ANALYSIS_HISTORY.get(analysis_id)
-        if not s: raise HTTPException(status_code=404, detail="No encontrado")
-        return {"status": "success", "steps": s["steps"], "data": {"video_metadata": {"title": s.get("title")}, "content_evaluation": {"puntaje_global": s.get("score")}}}
-    return {"status": "success", "steps": s["steps"], "data": {"video_metadata": s["video_metadata"], "transcription": s["transcription"], "transcription_segments": s["transcription_segments"], "verbal_metrics": s["verbal_metrics"], "content_evaluation": s["content_evaluation"], "nonverbal_evaluation": s["nonverbal_evaluation"]}}
+        if not s: 
+            raise HTTPException(status_code=404, detail="No encontrado")
+            
+        # Convertimos el diccionario a un String JSON para que React no explote
+        historial_content_string = json.dumps({"puntaje_global": s.get("score", 0)})
+        
+        return {
+            "status": "success", 
+            "steps": s.get("steps", {}), 
+            "data": {
+                "video_metadata": {"title": s.get("title", "")}, 
+                "content_evaluation": historial_content_string # <--- AHORA ES UN STRING
+            }
+        }
+        
+    return {
+        "status": "success", 
+        "steps": s["steps"], 
+        "data": {
+            "video_metadata": s.get("video_metadata"), 
+            "transcription": s.get("transcription"), 
+            "transcription_segments": s.get("transcription_segments"), 
+            "verbal_metrics": s.get("verbal_metrics"), 
+            "content_evaluation": s.get("content_evaluation"), 
+            "nonverbal_evaluation": s.get("nonverbal_evaluation")
+        }
+    }
 
 @app.delete("/api/v1/analysis/{analysis_id}")
 async def close_analysis(analysis_id: str):
