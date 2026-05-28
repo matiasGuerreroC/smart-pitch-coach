@@ -521,35 +521,50 @@ def _run_content_step(session: Dict[str, Any]) -> None:
     rubric_id_solicitada = session.get("rubric_id")
     
     # --- RAG RETRIEVAL: BÚSQUEDA VECTORIAL EN NEON ---
-    print(f"Buscando bases de '{rubric_id_solicitada}' en BD Vectorial...")
+    print(f"🔍 Buscando bases en BD Vectorial para el concurso...")
     db_session = next(get_db())
     try:
         vector_pitch = get_embedding(session['transcription'])
         chunks_relevantes = db_session.query(RubricaChunk).filter(RubricaChunk.rubric_id == rubric_id_solicitada).order_by(RubricaChunk.embedding.cosine_distance(vector_pitch)).limit(5).all()
-        contexto_rag = "\n\n".join([chunk.texto for chunk in chunks_relevantes]) if chunks_relevantes else "Evalúa la innovación, modelo de negocios, mercado y equipo."
+        contexto_rag = "\n\n".join([chunk.texto for chunk in chunks_relevantes]) if chunks_relevantes else "Evalúa la innovación y mercado."
     except Exception as e:
-        print(f"Error en RAG Retrieval: {e}")
-        contexto_rag = "Evalúa la innovación, modelo de negocios, mercado y equipo."
+        print(f"⚠️ Error en RAG Retrieval: {e}")
+        contexto_rag = "Evalúa la innovación y mercado."
     finally:
         db_session.close()
 
+    # OJO AQUÍ: Le gritamos a Gemini que NO hable, solo mande JSON
     prompt = f"""Eres juez estricto. Basándote EXCLUSIVAMENTE en fragmentos de las bases oficiales: 
     <BASES> {contexto_rag} </BASES>
-    Evalúa este pitch en JSON con: puntaje_global(1-100), puntos_fuertes(2), puntos_debiles(2), recomendacion. Pitch: "{session['transcription']}" """
+    Evalúa este pitch en JSON con: puntaje_global(1-100), puntos_fuertes(2), puntos_debiles(2), recomendacion.
+    REGLA VITAL: DEVUELVE ÚNICAMENTE EL JSON. NO escribas saludos, ni introducciones, ni texto fuera de las llaves.
+    Pitch: "{session['transcription']}" """
     
+    import time
     for intento in range(3):
         try:
             resp = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-            texto_limpio = resp.text.replace("```json", "").replace("```", "").strip()
+            texto_bruto = resp.text.strip()
             
-            # GUARDAR COMO STRING PURO
-            session["content_evaluation"] = texto_limpio 
+            # Limpieza extrema: Extraemos solo lo que está entre las llaves { }
+            start = texto_bruto.find("{")
+            end = texto_bruto.rfind("}")
+            if start != -1 and end != -1:
+                texto_limpio = texto_bruto[start:end+1]
+            else:
+                texto_limpio = texto_bruto
+                
+            session["content_evaluation"] = texto_limpio # Guardamos como string puro
             session["steps"]["content"] = True
             return
         except Exception as e:
-            if "429" in str(e) and intento < 2: time.sleep(30)
-            # Guardar el error como string en formato JSON para que el frontend lo lea igual
-            else: session["content_evaluation"] = f'{{"error": "{str(e)}"}}'; session["steps"]["content"] = True; return
+            if "429" in str(e) and intento < 2: 
+                print(f"⏳ Cuota excedida en Contenido. Esperando 30s... (Intento {intento+1}/3)")
+                time.sleep(30)
+            else: 
+                session["content_evaluation"] = f'{{"error": "Fallo en IA: {str(e)}"}}'
+                session["steps"]["content"] = True
+                return
 
 def _run_nonverbal_step(session: Dict[str, Any]) -> None:
     if session["steps"]["nonverbal"]: return
@@ -560,15 +575,25 @@ def _run_all_steps_bg(analysis_id: str):
     session = ANALYSIS_SESSIONS.get(analysis_id)
     if not session: return
     try:
+        print(f"\n🚀 [INICIANDO ANÁLISIS ASÍNCRONO] ID: {analysis_id}")
+        
+        print(f"⏳ [1/4] Ejecutando Transcripción (Whisper)...")
         _run_transcription_step(session)
+        
+        print(f"⏳ [2/4] Calculando Métricas Verbales...")
         _run_verbal_metrics_step(session)
+        
+        print(f"⏳ [3/4] Evaluando Contenido (RAG con Gemini)...")
         _run_content_step(session)
+        
+        print(f"⏳ [4/4] Evaluando Lenguaje No Verbal (Visión)...")
         _run_nonverbal_step(session)
-    except Exception as e: 
-        print(f"Error procesando pasos bg: {e}")
-    finally:
-        # Esto garantiza que el frontend vea que terminó y guarde el puntaje 0 si falló algo
+        
         _update_analysis_steps(analysis_id, session["steps"])
+        print(f"✅ [ÉXITO] ANÁLISIS COMPLETADO PARA ID: {analysis_id}\n")
+        
+    except Exception as e: 
+        print(f"❌ [ERROR] Falló el proceso en segundo plano: {e}")
 
 @app.post("/api/v1/analysis/upload")
 async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadFile = File(...), rubricId: str = Form(None)):
