@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 groq
-google-generativeai
+google-genai
 python-dotenv
 yt-dlp
 opencv-python
@@ -12,3 +12,6 @@ imageio-ffmpeg
 psycopg2-binary
 pgvector
 sqlalchemy
+PyMuPDF
+python-multipart
+python-docx
