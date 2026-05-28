@@ -32,5 +32,39 @@
       "nonverbal": true
     },
     "score": 68
+  },
+  "4bd515fb-3452-4d0f-9fdf-e4925bbd9bfe": {
+    "analysis_id": "4bd515fb-3452-4d0f-9fdf-e4925bbd9bfe",
+    "title": "DANIELA BERRIOS - VIU 2025 UFRO",
+    "created_at": "2026-05-28T00:29:51.978707",
+    "source_url": "https://www.youtube.com/watch?v=ZP6JS00mu2M",
+    "rubric_id": "anid_viu_2026",
+    "rubric_name": "ANID VIU 2026",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 0
+  },
+  "abd3de8b-93d1-4c8e-9dd6-71732e391393": {
+    "analysis_id": "abd3de8b-93d1-4c8e-9dd6-71732e391393",
+    "title": "Fabián Otálora - VIU 2025",
+    "created_at": "2026-05-28T00:36:56.451266",
+    "source_url": "https://www.youtube.com/watch?v=yL9U4wc6b-s",
+    "rubric_id": "crea_y_desarrolla",
+    "rubric_name": "Crea y Desarrolla PUCV",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 0
   }
 }

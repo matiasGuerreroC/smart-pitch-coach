@@ -255,7 +255,6 @@ async def get_rubrics(db: Session = Depends(get_db)):
 @app.post("/api/v1/rubrics")
 async def create_rubric(payload: RubricCreateRequest, db: Session = Depends(get_db)):
     """Si viene con ID (del PDF extraído), actualiza nombre/desc. Si no, lo crea manual."""
-    # 1. Si Nico manda el ID del PDF que acabamos de extraer
     if payload.id:
         rubrica_existente = db.query(Rubrica).filter(Rubrica.id == payload.id).first()
         if rubrica_existente:
@@ -351,7 +350,6 @@ async def extract_rubrics(file: UploadFile = File(...), db: Session = Depends(ge
     
     db.commit()
 
-    # Le pedimos a Gemini sugerencias SOLO para que la UI de Nico las muestre bonito
     criterios_prompt = f"Resume este texto en 4 criterios clave de evaluación cortos:\n{texto_completo[:2500]}"
     try:
         resp = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=criterios_prompt)
@@ -544,13 +542,14 @@ def _run_content_step(session: Dict[str, Any]) -> None:
             resp = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
             texto_limpio = resp.text.replace("```json", "").replace("```", "").strip()
             
-            # Guardamos como STRING puro para respetar el contrato del Frontend de Nico
+            # GUARDAR COMO STRING PURO
             session["content_evaluation"] = texto_limpio 
             session["steps"]["content"] = True
             return
         except Exception as e:
             if "429" in str(e) and intento < 2: time.sleep(30)
-            else: session["content_evaluation"] = {"error": str(e)}; session["steps"]["content"] = True; return
+            # Guardar el error como string en formato JSON para que el frontend lo lea igual
+            else: session["content_evaluation"] = f'{{"error": "{str(e)}"}}'; session["steps"]["content"] = True; return
 
 def _run_nonverbal_step(session: Dict[str, Any]) -> None:
     if session["steps"]["nonverbal"]: return
@@ -565,8 +564,11 @@ def _run_all_steps_bg(analysis_id: str):
         _run_verbal_metrics_step(session)
         _run_content_step(session)
         _run_nonverbal_step(session)
+    except Exception as e: 
+        print(f"Error procesando pasos bg: {e}")
+    finally:
+        # Esto garantiza que el frontend vea que terminó y guarde el puntaje 0 si falló algo
         _update_analysis_steps(analysis_id, session["steps"])
-    except Exception as e: print(f"Error procesando pasos bg: {e}")
 
 @app.post("/api/v1/analysis/upload")
 async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadFile = File(...), rubricId: str = Form(None)):
@@ -586,15 +588,20 @@ async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadF
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/analysis/start")
-async def start_analysis(request: AnalysisStartRequest):
+async def start_analysis(request: AnalysisStartRequest, background_tasks: BackgroundTasks):
     analysis_id = str(uuid.uuid4())
     raw_video_path = download_video_from_youtube(request.youtube_url, output_filename=f"temp_video_{analysis_id}")
     raw_audio_path = download_audio_from_youtube(request.youtube_url, output_filename=f"temp_audio_{analysis_id}")
     audio_path = normalize_audio_for_whisper(raw_audio_path)
     video_metadata = fetch_video_metadata(request.youtube_url)
+    
     session = {"analysis_id": analysis_id, "youtube_url": request.youtube_url, "created_at": datetime.utcnow().isoformat(), "raw_audio_path": raw_audio_path, "audio_path": audio_path, "raw_video_path": raw_video_path, "video_metadata": video_metadata, "transcription": None, "transcription_segments": [], "transcription_words": [], "verbal_metrics": None, "content_evaluation": None, "nonverbal_evaluation": None, "steps": {"prepared": True, "transcription": False, "verbal_metrics": False, "content": False, "nonverbal": False}, "rubric_id": request.rubric_id}
+    
     ANALYSIS_SESSIONS[analysis_id] = session
     _save_analysis_record(analysis_id, video_metadata, request.youtube_url, request.rubric_id)
+    
+    background_tasks.add_task(_run_all_steps_bg, analysis_id)
+    
     return {"status": "success", "analysis_id": analysis_id}
 
 @app.get("/api/v1/analysis/{analysis_id}")
