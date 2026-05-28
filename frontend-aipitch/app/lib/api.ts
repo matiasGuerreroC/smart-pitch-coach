@@ -23,11 +23,13 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export interface ExtractedRubric {
+  id: string;
   name: string;
   suggestedCriteria: string[];
 }
 
 export interface CreateRubricPayload {
+  id?: string;
   name: string;
   description: string;
   criteria: string[];

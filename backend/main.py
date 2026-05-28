@@ -4,35 +4,44 @@ import json
 import os
 import subprocess
 import uuid
+import time
 from datetime import datetime
 from typing import Any, Dict, Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
 import imageio_ffmpeg
-import google.generativeai as genai
+from google import genai
 import yt_dlp
 from fastapi.responses import FileResponse
 from pathlib import Path
 import cv2
 from PIL import Image
 
+import fitz
+import docx
+from sqlalchemy.orm import Session
+from vectorialDB import init_db, get_db, Rubrica, RubricaChunk
 
 # Cargar variables de entorno
-
 load_dotenv()
 
 # 1. Inicializar cliente de Groq (Voz)
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # 2. Inicializar cliente de Gemini (Cognitivo)
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-# Usamos flash porque es ultrarrápido y barato
-gemini_model = genai.GenerativeModel('gemini-2.5-flash') 
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(title="AIPitch - Backend MVP")
+
+# Inicializar Base de Datos en Neon
+init_db()
+
+# ============================================================================
+# CONFIGURACIÓN CORS
+# ============================================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,32 +55,24 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 DEBUG_DIR = BASE_DIR / "debug"
 
-
 class PitchRequest(BaseModel):
     youtube_url: str
-
 
 class AnalysisStartRequest(BaseModel):
     youtube_url: str
     rubric_id: Optional[str] = None
 
-
 class RubricCreateRequest(BaseModel):
+    id: Optional[str] = None
     name: str
     description: str
     criteria: Optional[list[str]] = None
 
-
 ANALYSIS_SESSIONS: Dict[str, Dict[str, Any]] = {}
 URL_TO_ANALYSIS_ID: Dict[str, str] = {}
 ANALYSIS_HISTORY: Dict[str, Dict[str, Any]] = {}
-RUBRICS_STORE: Dict[str, Dict[str, str]] = {
-    "1": {"id": "1", "name": "Y Combinator Standard", "description": "Criteria based on YC 2-minute standard."},
-    "2": {"id": "2", "name": "Enterprise B2B", "description": "For enterprise cold calling."},
-}
-HISTORY_PATH = DEBUG_DIR / "analysis_history.json"
-RUBRICS_PATH = DEBUG_DIR / "rubrics_store.json"
 
+HISTORY_PATH = DEBUG_DIR / "analysis_history.json"
 
 def _load_history_from_disk() -> Dict[str, Dict[str, Any]]:
     if not HISTORY_PATH.exists():
@@ -85,7 +86,6 @@ def _load_history_from_disk() -> Dict[str, Dict[str, Any]]:
         print(f"No se pudo cargar history: {exc}")
     return {}
 
-
 def _persist_history_to_disk() -> None:
     try:
         with open(HISTORY_PATH, "w", encoding="utf-8") as handle:
@@ -93,35 +93,16 @@ def _persist_history_to_disk() -> None:
     except Exception as exc:
         print(f"No se pudo guardar history: {exc}")
 
-
-def _load_rubrics_from_disk() -> Dict[str, Dict[str, Any]]:
-    if not RUBRICS_PATH.exists():
-        return {}
-    try:
-        with open(RUBRICS_PATH, "r", encoding="utf-8") as handle:
-            raw = json.load(handle)
-        if isinstance(raw, dict):
-            return raw
-    except Exception as exc:
-        print(f"No se pudo cargar rubricas: {exc}")
-    return {}
-
-
-def _persist_rubrics_to_disk() -> None:
-    try:
-        with open(RUBRICS_PATH, "w", encoding="utf-8") as handle:
-            json.dump(RUBRICS_STORE, handle, ensure_ascii=False, indent=2)
-    except Exception as exc:
-        print(f"No se pudo guardar rubricas: {exc}")
-
-
 ANALYSIS_HISTORY.update(_load_history_from_disk())
-RUBRICS_STORE.update(_load_rubrics_from_disk())
 
 def _extract_score_from_content(content_evaluation: Optional[str]) -> int:
     if not content_evaluation:
         return 0
     try:
+        if isinstance(content_evaluation, dict):
+            score = content_evaluation.get("puntaje_global")
+            return int(score) if str(score).isdigit() else 0
+            
         start = content_evaluation.find("{")
         end = content_evaluation.rfind("}")
         if start == -1 or end == -1:
@@ -132,9 +113,17 @@ def _extract_score_from_content(content_evaluation: Optional[str]) -> int:
     except Exception:
         return 0
 
-
 def _save_analysis_record(analysis_id: str, video_metadata: Dict[str, Any], source_url: str, rubric_id: Optional[str]) -> None:
-    rubric_name = RUBRICS_STORE.get(rubric_id or "", {}).get("name")
+    rubric_name = "Rúbrica Desconocida"
+    if rubric_id:
+        db_session = next(get_db())
+        try:
+            r = db_session.query(Rubrica).filter(Rubrica.id == rubric_id).first()
+            if r:
+                rubric_name = r.name
+        finally:
+            db_session.close()
+
     ANALYSIS_HISTORY[analysis_id] = {
         "analysis_id": analysis_id,
         "title": video_metadata.get("title", ""),
@@ -165,37 +154,213 @@ def _list_analysis_records() -> list[Dict[str, Any]]:
     return sorted(records, key=lambda r: r.get("created_at", ""), reverse=True)
 
 # ============================================================================
-# RUBRICAS
+# RAG: GESTOR DE RÚBRICAS VECTORIALES (NEON DB)
 # ============================================================================
 
-@app.get("/api/v1/rubrics")
-async def get_rubrics():
-    return list(RUBRICS_STORE.values())
+def get_embedding(texto: str) -> list[float]:
+    """Convierte texto en vectores matemáticos con Gemini"""
+    response = gemini_client.models.embed_content(
+        model="gemini-embedding-2",
+        contents=texto
+    )
+    return response.embeddings[0].values
 
+def seed_default_rubrics(db: Session):
+    """Inyecta las rúbricas base leyendo los PDFs ORIGINALES si la BD está vacía"""
+    if db.query(Rubrica).first():
+        return # Ya existen en Neon, no hacemos nada
+        
+    # Creamos una carpeta para los PDFs oficiales si no existe
+    rubricas_dir = BASE_DIR / "rubricas_oficiales"
+    if not rubricas_dir.exists():
+        rubricas_dir.mkdir()
+        print(f"⚠️ Carpeta '{rubricas_dir.name}' creada. Pon los PDFs oficiales ahí y reinicia el servidor para vectorizarlos.")
+        return
+
+    # Definimos los archivos que el sistema buscará en esa carpeta
+    archivos_oficiales = [
+        {
+            "id": "anid_viu_2026",
+            "filename": "bases_anid_viu_2026.pdf",
+            "name": "ANID VIU 2026",
+            "description": "✅ Documento Oficial por defecto (No eliminable)."
+        },
+        {
+            "id": "crea_y_desarrolla",
+            "name": "Crea y Desarrolla PUCV",
+            "filename": "bases_crea_y_desarrolla_2026.pdf",
+            "description": "✅ Documento Oficial por defecto (No eliminable)."
+        }
+    ]
+    
+    for item in archivos_oficiales:
+        pdf_path = rubricas_dir / item["filename"]
+        if not pdf_path.exists():
+            print(f"⚠️ Faltan las bases oficiales: No se encontró '{item['filename']}' en la carpeta rubricas_oficiales.")
+            continue # Saltamos este archivo si no está
+            
+        print(f"Leyendo y vectorizando PDF original: {item['filename']}...")
+        
+        # 1. Leer el PDF completo
+        texto_completo = ""
+        doc = fitz.open(str(pdf_path))
+        for page in doc: 
+            texto_completo += page.get_text("text") + "\n"
+        doc.close()
+
+        # 2. Cortarlo en chunks de 1500 caracteres
+        chunks = [texto_completo[i:i+1500] for i in range(0, len(texto_completo), 1500)]
+        
+        # 3. Guardar en BD
+        db.add(Rubrica(id=item["id"], name=item["name"], description=item["description"], is_default=True))
+        
+        # 4. Vectorizar cada chunk con Rate Limiter manual (para no explotar Gemini)
+        for i, chunk in enumerate(chunks):
+            for intento in range(3):
+                try:
+                    vector = get_embedding(chunk)
+                    db.add(RubricaChunk(rubric_id=item["id"], texto=chunk, embedding=vector))
+                    time.sleep(1.5) # Respiro a la API
+                    print(f"   -> {item['name']}: Fragmento {i+1}/{len(chunks)} vectorizado.")
+                    break
+                except Exception as e:
+                    if "429" in str(e):
+                        print(f"⚠️ Ráfaga detectada por Google. Esperando 15s... (Intento {intento+1}/3)")
+                        time.sleep(15)
+                    else:
+                        raise e
+                        
+        db.commit()
+        print(f"✅ Rúbrica '{item['name']}' inyectada con éxito en Neon DB.")
+
+# Ejecutar el seed al iniciar FastAPI
+try:
+    with next(get_db()) as db_session:
+        seed_default_rubrics(db_session)
+except Exception as e:
+    print(f"Error al conectar con la BD Vectorial en Neon: {e}")
+
+@app.get("/api/v1/rubrics")
+async def get_rubrics(db: Session = Depends(get_db)):
+    """Devuelve la lista de rúbricas (Oficiales primero, luego las de usuarios)"""
+    # Ordenamos para que las is_default salgan primero arriba en la pantalla
+    rubricas_db = db.query(Rubrica).order_by(Rubrica.is_default.desc()).all()
+    return [{
+        "id": r.id, 
+        "name": r.name, 
+        "description": r.description, 
+        "is_default": r.is_default
+    } for r in rubricas_db]
 
 @app.post("/api/v1/rubrics")
-async def create_rubric(payload: RubricCreateRequest):
+async def create_rubric(payload: RubricCreateRequest, db: Session = Depends(get_db)):
+    """Si viene con ID (del PDF extraído), actualiza nombre/desc. Si no, lo crea manual."""
+    if payload.id:
+        rubrica_existente = db.query(Rubrica).filter(Rubrica.id == payload.id).first()
+        if rubrica_existente:
+            rubrica_existente.name = payload.name.strip()
+            rubrica_existente.description = payload.description.strip()
+            db.commit()
+            return {"id": rubrica_existente.id, "name": rubrica_existente.name, "is_default": rubrica_existente.is_default}
+    
+    # 2. Si no trae ID, es una rúbrica manual creada desde cero
     rubric_id = str(uuid.uuid4())
-    RUBRICS_STORE[rubric_id] = {
-        "id": rubric_id,
-        "name": payload.name.strip() or "Rúbrica sin nombre",
-        "description": payload.description.strip() or "Rúbrica generada por IA.",
-        "criteria": payload.criteria or [],
-    }
-    _persist_rubrics_to_disk()
-    return RUBRICS_STORE[rubric_id]
+    db.add(Rubrica(id=rubric_id, name=payload.name.strip(), description=payload.description.strip(), is_default=False))
+    
+    texto_criterios = " ".join(payload.criteria or [])
+    if texto_criterios:
+        vector = get_embedding(texto_criterios)
+        db.add(RubricaChunk(rubric_id=rubric_id, texto=texto_criterios, embedding=vector))
+        
+    db.commit()
+    return {"id": rubric_id, "name": payload.name, "is_default": False}
+
+@app.delete("/api/v1/rubrics/{rubric_id}")
+async def delete_rubric(rubric_id: str, db: Session = Depends(get_db)):
+    """Permite borrar rúbricas, protegiendo las bases oficiales"""
+    rubrica = db.query(Rubrica).filter(Rubrica.id == rubric_id).first()
+    if not rubrica:
+        raise HTTPException(status_code=404, detail="Rúbrica no encontrada")
+    if rubrica.is_default:
+        raise HTTPException(status_code=403, detail="Las bases oficiales no pueden ser eliminadas.")
+        
+    db.delete(rubrica) # Borra en cascada la rúbrica y sus vectores
+    db.commit()
+    return {"status": "success"}
 
 @app.post("/api/v1/rubrics/extract")
-async def extract_rubrics(file: UploadFile = File(...)):
-    # Simulación de extracción para no bloquear el flujo
+async def extract_rubrics(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Sube un PDF/Word ORIGINAL, extrae todo el texto, lo vectoriza y guarda en Neon"""
+    rubric_id = str(uuid.uuid4())
+    
+    # Extraer texto del PDF directamente desde la memoria
+    texto_completo = ""
+    file_bytes = await file.read()
+    
+    try:
+        if file.filename.endswith(".pdf"):
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            for page in doc: 
+                texto_completo += page.get_text("text") + "\n"
+            doc.close()
+        else:
+            # Para DOCX u otros, guardamos temporal
+            temp_path = f"temp_{file.filename}"
+            with open(temp_path, "wb") as buffer:
+                buffer.write(file_bytes)
+            if file.filename.endswith(".docx"):
+                doc = docx.Document(temp_path)
+                for para in doc.paragraphs: 
+                    texto_completo += para.text + "\n"
+            os.remove(temp_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error leyendo archivo: {str(e)}")
+    
+    if not texto_completo.strip():
+        raise HTTPException(status_code=400, detail="Documento vacío o ilegible")
+
+    # RAG INGESTION: Cortamos el PDF oficial en pedazos de 1500 caracteres
+    chunks = [texto_completo[i:i+1500] for i in range(0, len(texto_completo), 1500)]    
+    
+    # RAG INGESTION: Generar vectores y guardar en Postgres
+    db.add(Rubrica(id=rubric_id, name=f"Bases de {file.filename}", description="Documento oficial subido", is_default=False))
+    
+    print(f"Generando vectores para {len(chunks)} fragmentos...")
+    
+    for i, chunk in enumerate(chunks):
+        for intento in range(3):
+            try:
+                vector = get_embedding(chunk)
+                db.add(RubricaChunk(rubric_id=rubric_id, texto=chunk, embedding=vector))
+                
+                # Le damos un respiro de 1.5 segundos a la API gratuita de Google
+                time.sleep(1.5) 
+                print(f"Fragmento {i+1}/{len(chunks)} vectorizado.")
+                break # Salió bien, rompemos el bucle de reintentos
+                
+            except Exception as e:
+                if "429" in str(e):
+                    print(f"⚠️ Ráfaga detectada por Google. Esperando 15s... (Intento {intento+1}/3)")
+                    time.sleep(15)
+                else:
+                    raise e # Si es otro error, que explote normalmente
+                    
+    db.commit()
+    print("¡Todos los fragmentos guardados en Neon!")
+    
+    db.commit()
+
+    criterios_prompt = f"Resume este texto en 4 criterios clave de evaluación cortos:\n{texto_completo[:2500]}"
+    try:
+        resp = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=criterios_prompt)
+        sugerencias = [c.strip().replace("-", "").replace("*", "") for c in resp.text.split('\n') if c.strip()]
+    except:
+        sugerencias = ["Problema", "Solución", "Mercado", "Equipo"]
+    
     return {
-        "name": f"Rúbrica de {file.filename}",
-        "suggestedCriteria": [
-            "Claridad del problema",
-            "Tamaño del mercado",
-            "Tracción actual o demo del producto",
-            "Call to action claro"
-        ]
+        "id": rubric_id,
+        "name": f"Bases de {file.filename}",
+        "suggestedCriteria": sugerencias
     }
 
 
@@ -232,801 +397,303 @@ async def root():
         }
     }
 
-
 @app.get("/debug")
 async def debug_frontend():
     """Frontend de debug para probar los endpoints de forma intuitiva"""
     return FileResponse(DEBUG_DIR / "index.html")
 
-
-@app.post("/api/v1/analysis/start")
-async def start_analysis(request: AnalysisStartRequest):
-    existing_id = URL_TO_ANALYSIS_ID.get(request.youtube_url)
-    if existing_id and existing_id in ANALYSIS_SESSIONS:
-        session = ANALYSIS_SESSIONS[existing_id]
-        return _build_step_response(session, "Sesión reutilizada para esta URL", cached=True)
-
-    analysis_id = str(uuid.uuid4())
-    nombre_archivo = f"temp_audio_{analysis_id}"
-    nombre_video = f"temp_video_{analysis_id}"
-
-    video_metadata = fetch_video_metadata(request.youtube_url)
-    raw_audio_path = download_audio_from_youtube(request.youtube_url, output_filename=nombre_archivo)
-    audio_path = normalize_audio_for_whisper(raw_audio_path)
-    raw_video_path = download_video_from_youtube(request.youtube_url, output_filename=nombre_video)
-
-    session = {
-        "analysis_id": analysis_id,
-        "youtube_url": request.youtube_url,
-        "created_at": datetime.utcnow().isoformat(),
-        "raw_audio_path": raw_audio_path,
-        "audio_path": audio_path,
-        "raw_video_path": raw_video_path,
-        "video_metadata": video_metadata,
-        "transcription": None,
-        "transcription_segments": [],
-        "transcription_words": [],
-        "verbal_metrics": None,
-        "content_evaluation": None,
-        "nonverbal_evaluation": None,
-        "steps": {
-            "prepared": True,
-            "transcription": False,
-            "verbal_metrics": False,
-            "content": False,
-            "nonverbal": False,
-        },
-    }
-
-    ANALYSIS_SESSIONS[analysis_id] = session
-    URL_TO_ANALYSIS_ID[request.youtube_url] = analysis_id
-    _save_analysis_record(analysis_id, video_metadata, request.youtube_url, request.rubric_id)
-    return _build_step_response(session, "Sesión creada. Ejecuta los pasos manualmente")
-
-
-@app.post("/api/v1/analysis/{analysis_id}/transcription")
-async def run_transcription(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    cached = session["steps"]["transcription"]
-    try:
-        if not cached:
-            _run_transcription_step(session)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    _update_analysis_steps(analysis_id, session["steps"])
-    return _build_step_response(session, "Paso transcripción completado" if not cached else "Paso transcripción en caché", cached=cached)
-
-
-@app.post("/api/v1/analysis/{analysis_id}/verbal-metrics")
-async def run_verbal_metrics(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    cached = session["steps"]["verbal_metrics"]
-    try:
-        if not cached:
-            _run_verbal_metrics_step(session)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    _update_analysis_steps(analysis_id, session["steps"])
-    return _build_step_response(session, "Paso métricas verbales completado" if not cached else "Paso métricas verbales en caché", cached=cached)
-
-
-# Compatibilidad con el flujo anterior
-@app.post("/api/v1/analysis/{analysis_id}/verbal")
-async def run_verbal_legacy(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    cached = session["steps"]["transcription"] and session["steps"]["verbal_metrics"]
-    try:
-        if not session["steps"]["transcription"]:
-            _run_transcription_step(session)
-        if not session["steps"]["verbal_metrics"]:
-            _run_verbal_metrics_step(session)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    _update_analysis_steps(analysis_id, session["steps"])
-    return _build_step_response(session, "Paso verbal legacy completado" if not cached else "Paso verbal legacy en caché", cached=cached)
-
-
-@app.post("/api/v1/analysis/{analysis_id}/content")
-async def run_content(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    cached = session["steps"]["content"]
-    try:
-        if not cached:
-            _run_content_step(session)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    _update_analysis_steps(analysis_id, session["steps"])
-    return _build_step_response(session, "Paso contenido completado" if not cached else "Paso contenido en caché", cached=cached)
-
-
-@app.post("/api/v1/analysis/{analysis_id}/nonverbal")
-async def run_nonverbal(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    cached = session["steps"]["nonverbal"]
-    try:
-        if not cached:
-            _run_nonverbal_step(session)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    _update_analysis_steps(analysis_id, session["steps"])
-    return _build_step_response(session, "Paso no verbal completado" if not cached else "Paso no verbal en caché", cached=cached)
-
-
-@app.get("/api/v1/analysis/{analysis_id}")
-async def get_analysis(analysis_id: str):
-    session = ANALYSIS_SESSIONS.get(analysis_id)
-    if session:
-        return _build_step_response(session, "Estado actual de la sesión")
-
-    history = ANALYSIS_HISTORY.get(analysis_id)
-    if not history:
-        raise HTTPException(status_code=404, detail="analysis_id no encontrado")
-
-    steps = history.get("steps") or {}
-    return {
-        "status": "success",
-        "message": "Sesión no activa; devolviendo historial guardado",
-        "analysis_id": analysis_id,
-        "cached": True,
-        "steps": steps,
-        "next_step": None,
-        "data": {
-            "video_metadata": {
-                "title": history.get("title", ""),
-                "webpage_url": history.get("source_url", ""),
-            },
-            "transcription": None,
-            "transcription_segments": [],
-            "transcription_words": [],
-            "verbal_metrics": None,
-            "content_evaluation": None,
-            "nonverbal_evaluation": None,
-        },
-    }
-
-
-@app.delete("/api/v1/analysis/{analysis_id}")
-async def close_analysis(analysis_id: str):
-    session = _get_session_or_404(analysis_id)
-    _cleanup_session_files(session)
-    URL_TO_ANALYSIS_ID.pop(session["youtube_url"], None)
-    ANALYSIS_SESSIONS.pop(analysis_id, None)
-    return {"status": "success", "message": "Sesión cerrada y archivos temporales eliminados"}
-
-
-def _build_step_response(session: Dict[str, Any], message: str, cached: bool = False) -> Dict[str, Any]:
-    next_step = _get_next_step(session)
-    return {
-        "status": "success",
-        "message": message,
-        "analysis_id": session["analysis_id"],
-        "cached": cached,
-        "steps": session["steps"],
-        "next_step": next_step,
-        "data": {
-            "video_metadata": session["video_metadata"],
-            "transcription": session["transcription"],
-            "transcription_segments": session["transcription_segments"],
-            "transcription_words": session["transcription_words"],
-            "verbal_metrics": session["verbal_metrics"],
-            "content_evaluation": session["content_evaluation"],
-            "nonverbal_evaluation": session["nonverbal_evaluation"],
-        },
-    }
-
-
-def _get_session_or_404(analysis_id: str) -> Dict[str, Any]:
-    session = ANALYSIS_SESSIONS.get(analysis_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="analysis_id no encontrado")
-    return session
-
-
-def _get_next_step(session: Dict[str, Any]) -> str | None:
-    steps = session["steps"]
-    if not steps["transcription"]:
-        return "transcription"
-    if not steps["verbal_metrics"]:
-        return "verbal-metrics"
-    if not steps["content"]:
-        return "content"
-    if not steps["nonverbal"]:
-        return "nonverbal"
-    return None
-
-
-def _cleanup_session_files(session: Dict[str, Any]) -> None:
-    for key in ["audio_path", "raw_audio_path", "raw_video_path"]:
-        path = session.get(key)
-        if path and os.path.exists(path):
-            os.remove(path)
-
-
-def _run_transcription_step(session: Dict[str, Any]) -> None:
-    if session["steps"]["transcription"]:
-        return
-
-    video_metadata = session["video_metadata"]
-    audio_path = session["audio_path"]
-
-    whisper_context_prompt = (
-        f"El siguiente es un pitch de innovación sobre {video_metadata.get('title', 'tecnología')}. "
-        "El orador usa muletillas como eh, mmm, ah, o sea."
-    )
-
-    with open(audio_path, "rb") as file:
-        transcription = groq_client.audio.transcriptions.create(
-            file=(audio_path, file.read()),
-            model="whisper-large-v3",
-            prompt=whisper_context_prompt,
-            temperature=0,
-            response_format="verbose_json",
-            language="es",
-        )
-
-    pitch_text = getattr(transcription, "text", "")
-    segmentos = getattr(transcription, "segments", []) or []
-    words = getattr(transcription, "words", []) or []
-
-    segmentos_detallados = []
-    for idx, segmento in enumerate(segmentos):
-        texto_segmento = segmento.get("text", "").strip()
-        segmentos_detallados.append({
-            "indice": idx + 1,
-            "inicio": round(segmento.get("start", 0), 2),
-            "fin": round(segmento.get("end", 0), 2),
-            "duracion_segundos": round(segmento.get("end", 0) - segmento.get("start", 0), 2),
-            "texto": texto_segmento,
-            "muletillas_detectadas": [],
-        })
-
-    palabras_con_tiempo = []
-    for palabra in words:
-        palabras_con_tiempo.append({
-            "palabra": palabra.get("word", "").strip(),
-            "inicio": round(palabra.get("start", 0), 2),
-            "fin": round(palabra.get("end", 0), 2),
-        })
-
-    session["transcription"] = pitch_text
-    session["transcription_segments"] = segmentos_detallados
-    session["transcription_words"] = palabras_con_tiempo
-    session["steps"]["transcription"] = True
-
-
-def _run_verbal_metrics_step(session: Dict[str, Any]) -> None:
-    if session["steps"]["verbal_metrics"]:
-        return
-    if not session.get("transcription"):
-        raise HTTPException(status_code=400, detail="Primero ejecuta el paso transcripción")
-
-    pitch_text = session["transcription"]
-    segmentos = session.get("transcription_segments", []) or []
-
-    total_palabras = len(pitch_text.split())
-    duracion_segundos = segmentos[-1]["fin"] if segmentos else 0
-    wpm = round((total_palabras / duracion_segundos) * 60) if duracion_segundos > 0 else 0
-
-    silencios_largos = []
-    for i in range(len(segmentos) - 1):
-        fin_actual = segmentos[i]["fin"]
-        inicio_siguiente = segmentos[i + 1]["inicio"]
-        pausa = inicio_siguiente - fin_actual
-        if pausa > 2.0:
-            silencios_largos.append({
-                "inicio": fin_actual,
-                "duracion_segundos": round(pausa, 2),
-            })
-
-    muletillas_comunes = [" eh ", " este ", " mmm ", " o sea "]
-    conteo_muletillas = sum(pitch_text.lower().count(m) for m in muletillas_comunes)
-
-    for segmento in session["transcription_segments"]:
-        texto_lower = (segmento.get("texto") or "").lower()
-        segmento["muletillas_detectadas"] = [m.strip() for m in muletillas_comunes if m.strip() in texto_lower]
-
-    session["verbal_metrics"] = {
-        "palabras_por_minuto": wpm,
-        "nivel_velocidad": "Óptimo" if 130 <= wpm <= 160 else "Muy rápido" if wpm > 160 else "Muy lento",
-        "cantidad_muletillas": conteo_muletillas,
-        "silencios_largos": silencios_largos,
-    }
-    session["steps"]["verbal_metrics"] = True
-
-
-def _run_content_step(session: Dict[str, Any]) -> None:
-    if session["steps"]["content"]:
-        return
-    if not session["steps"].get("transcription"):
-        raise HTTPException(status_code=400, detail="Primero ejecuta el paso transcripción")
-
-    prompt_evaluador = f"""
-    Eres un juez estricto pero constructivo de un fondo concursable de innovación en Chile (tipo CORFO o ANID).
-    Evalúa el siguiente texto de un pitch de emprendimiento.
-    Devuelve tu análisis en formato JSON estructurado con las siguientes claves:
-    - \"puntaje_global\": un número del 1 al 100.
-    - \"puntos_fuertes\": un arreglo con 2 cosas buenas del discurso.
-    - \"puntos_debiles\": un arreglo con 2 cosas que faltaron (ej. modelo de negocios, equipo, tracción).
-    - \"recomendacion\": un párrafo corto con un consejo clave para mejorar.
-
-    Texto del pitch:
-    \"{session['transcription']}\"
-    """
-    respuesta_gemini = gemini_model.generate_content(prompt_evaluador)
-    session["content_evaluation"] = respuesta_gemini.text
-    session["steps"]["content"] = True
-
-
-def _run_nonverbal_step(session: Dict[str, Any]) -> None:
-    if session["steps"]["nonverbal"]:
-        return
-    if not session["steps"].get("content"):
-        raise HTTPException(status_code=400, detail="Primero ejecuta el paso contenido")
-    session["nonverbal_evaluation"] = analyze_nonverbal_with_gemini(session["raw_video_path"])
-    session["steps"]["nonverbal"] = True
-
+# ============================================================================
+# FLUJO DE ANÁLISIS ASÍNCRONO
+# ============================================================================
 
 def fetch_video_metadata(url: str) -> dict:
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True,
-    }
-
+    ydl_opts = {'quiet': True, 'no_warnings': True, 'skip_download': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-
-        return {
-            "title": info.get("title", ""),
-            "description": info.get("description", ""),
-            "channel": info.get("uploader", info.get("channel", "")),
-            "duration_seconds": info.get("duration", 0),
-            "webpage_url": info.get("webpage_url", url),
-        }
-    except Exception as e:
-        print(f"No se pudo obtener metadata del video: {e}")
-        return {
-            "title": "",
-            "description": "",
-            "channel": "",
-            "duration_seconds": 0,
-            "webpage_url": url,
-        }
+        return {"title": info.get("title", ""), "description": info.get("description", ""), "channel": info.get("uploader", info.get("channel", "")), "duration_seconds": info.get("duration", 0), "webpage_url": info.get("webpage_url", url)}
+    except Exception:
+        return {"title": "", "description": "", "channel": "", "duration_seconds": 0, "webpage_url": url}
 
 def download_audio_from_youtube(url: str, output_filename: str = "temp_audio"):
-    ydl_opts = {
-        'noplaylist': True,
-        'format': 'bestaudio/best',
-        'outtmpl': f'{output_filename}.%(ext)s',
-        'postprocessors':[{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'wav',
-            'preferredquality': '0',
-        }],
-    }
+    ydl_opts = {'noplaylist': True, 'format': 'bestaudio/best', 'outtmpl': f'{output_filename}.%(ext)s', 'postprocessors':[{'key': 'FFmpegExtractAudio', 'preferredcodec': 'wav', 'preferredquality': '0'}]}
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([url])
         return f"{output_filename}.wav"
-    except Exception as e:
-        raise Exception(f"Error descargando audio: {str(e)}")
-
+    except Exception as e: raise Exception(f"Error descargando audio: {str(e)}")
 
 def normalize_audio_for_whisper(source_path: str) -> str:
-    normalized_path = source_path.replace(".wav", ".whisper.mp3") # <--- Cambiado a mp3
+    normalized_path = source_path.replace(".wav", ".whisper.mp3") 
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-    command =[
-        ffmpeg_exe,
-        "-y",
-        "-i", source_path,
-        "-ac", "1",           # 1 Canal (Mono)
-        "-ar", "16000",       # 16000 Hz
-        "-b:a", "64k",        # Bitrate bajo, 64kbps es perfecto para voz
-        "-vn",                # Quitar video por si acaso
-        normalized_path,
-    ]
-
+    command =[ffmpeg_exe, "-y", "-i", source_path, "-ac", "1", "-ar", "16000", "-b:a", "64k", "-vn", normalized_path]
     result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"Error normalizando audio para Whisper: {result.stderr.strip()}")
-
+    if result.returncode != 0: raise Exception(f"Error normalizando audio: {result.stderr.strip()}")
     return normalized_path
 
-
 def download_video_from_youtube(url: str, output_filename: str = "temp_video") -> str:
-    ydl_opts = {
-        'noplaylist': True,
-        'format': 'best[ext=mp4]/best',
-        'merge_output_format': 'mp4',
-        'outtmpl': f'{output_filename}.%(ext)s',
-        'quiet': True,
-        'no_warnings': True,
-    }
+    ydl_opts = {'noplaylist': True, 'format': 'best[ext=mp4]/best', 'merge_output_format': 'mp4', 'outtmpl': f'{output_filename}.%(ext)s', 'quiet': True, 'no_warnings': True}
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([url])
         base_path = Path(output_filename)
-        video_extensions = {'.mp4', '.mkv', '.webm', '.mov', '.avi'}
-        candidates = [
-            path for path in base_path.parent.glob(f"{base_path.name}.*")
-            if path.suffix.lower() in video_extensions
-        ]
-        if not candidates:
-            raise Exception("No se encontró el archivo de video descargado")
+        candidates = [p for p in base_path.parent.glob(f"{base_path.name}.*") if p.suffix.lower() in {'.mp4', '.mkv', '.webm', '.mov', '.avi'}]
+        if not candidates: raise Exception("No se encontró el video")
         return str(candidates[0])
-    except Exception as e:
-        raise Exception(f"Error descargando video: {str(e)}")
-
+    except Exception as e: raise Exception(f"Error descargando video: {str(e)}")
 
 def extract_audio_from_video(video_path: str, output_filename: str = "temp_audio") -> str:
-    """Extrae el audio del video local a WAV (pcm_s16le) usando ffmpeg."""
     out_path = f"{output_filename}.wav"
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-    command = [
-        ffmpeg_exe,
-        "-y",
-        "-i",
-        str(video_path),
-        "-vn",
-        "-ac",
-        "1",
-        "-ar",
-        "16000",
-        "-acodec",
-        "pcm_s16le",
-        out_path,
-    ]
+    command = [ffmpeg_exe, "-y", "-i", str(video_path), "-vn", "-ac", "1", "-ar", "16000", "-acodec", "pcm_s16le", out_path]
     result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"Error extrayendo audio del video: {result.stderr.strip()}")
+    if result.returncode != 0: raise Exception(f"Error extrayendo audio: {result.stderr.strip()}")
     return out_path
-
 
 def get_video_duration_seconds(video_path: str) -> float:
     try:
         cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            return 0.0
         fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
         total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0.0
         cap.release()
         return (total_frames / fps) if fps else 0.0
-    except Exception:
-        return 0.0
-
+    except Exception: return 0.0
 
 def sample_video_frames(video_path: str, max_frames: int = 6, max_seconds: int = 30):
     capture = cv2.VideoCapture(video_path)
-    if not capture.isOpened():
-        raise Exception("No se pudo abrir el video para análisis no verbal")
-
     fps = capture.get(cv2.CAP_PROP_FPS) or 30
     total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     duration_seconds = total_frames / fps if fps else 0
     usable_seconds = min(max_seconds, duration_seconds) if duration_seconds else max_seconds
     frames_to_sample = max(1, min(max_frames, int(usable_seconds)))
-
+    timestamps = [0.0] if frames_to_sample == 1 else [round((usable_seconds * idx) / (frames_to_sample - 1), 2) for idx in range(frames_to_sample)]
     sampled_frames = []
-    timestamps = []
-    if frames_to_sample == 1:
-        timestamps = [0.0]
-    else:
-        timestamps = [
-            round((usable_seconds * idx) / (frames_to_sample - 1), 2)
-            for idx in range(frames_to_sample)
-        ]
-
     for timestamp in timestamps:
         capture.set(cv2.CAP_PROP_POS_MSEC, timestamp * 1000)
         success, frame = capture.read()
-        if not success or frame is None:
-            continue
-
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        sampled_frames.append({
-            "timestamp": timestamp,
-            "image": Image.fromarray(rgb_frame),
-        })
-
+        if success and frame is not None:
+            sampled_frames.append({"timestamp": timestamp, "image": Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))})
     capture.release()
     return sampled_frames, duration_seconds
-
 
 def analyze_nonverbal_with_gemini(video_path: str) -> dict:
     try:
         sampled_frames, duration_seconds = sample_video_frames(video_path)
-        if not sampled_frames:
-            return {
-                "available": False,
-                "reason": "No se pudieron extraer frames útiles del video",
-            }
+        if not sampled_frames: return {"available": False, "reason": "No se pudieron extraer frames"}
+        frame_notes = "\n".join([f"- Frame {idx + 1}: segundo {frame['timestamp']}" for idx, frame in enumerate(sampled_frames)])
+        prompt = f"""Eres analista de lenguaje no verbal. Evalúa: postura, contacto visual, expresión facial, uso de manos, confianza.
+        Devuelve JSON con: puntaje_global(1-100), fortalezas[], debilidades[], recomendacion, postura, contacto_visual, uso_manos, expresion_facial, nivel_confianza.
+        Duración: {round(duration_seconds, 2)}s\nFrames: {frame_notes}"""
+        response = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=[prompt, *[frame["image"] for frame in sampled_frames]])
+        texto_limpio = response.text.replace("```json", "").replace("```", "").strip()
+        return {"available": True, "frames_sampled": len(sampled_frames), "duration_seconds": round(duration_seconds, 2), "analysis": texto_limpio}
+    except Exception as e: return {"available": False, "reason": str(e)}
 
-        frame_notes = "\n".join([
-            f"- Frame {idx + 1}: segundo {frame['timestamp']}"
-            for idx, frame in enumerate(sampled_frames)
-        ])
+def _run_transcription_step(session: Dict[str, Any]) -> None:
+    if session["steps"]["transcription"]: return
+    video_metadata = session["video_metadata"]
+    with open(session["audio_path"], "rb") as file:
+        transcription = groq_client.audio.transcriptions.create(
+            file=(session["audio_path"], file.read()), model="whisper-large-v3",
+            prompt=f"Pitch sobre {video_metadata.get('title', 'tecnología')}. Muletillas como eh, mmm, ah, o sea.",
+            temperature=0, response_format="verbose_json", language="es"
+        )
+    session["transcription"] = getattr(transcription, "text", "")
+    segmentos = getattr(transcription, "segments", []) or []
+    words = getattr(transcription, "words", []) or []
+    segmentos_detallados = [{"indice": i+1, "inicio": round(s.get("start",0),2), "fin": round(s.get("end",0),2), "duracion_segundos": round(s.get("end",0)-s.get("start",0),2), "texto": s.get("text","").strip(), "muletillas_detectadas": []} for i, s in enumerate(segmentos)]
+    session["transcription_segments"] = segmentos_detallados
+    session["transcription_words"] = [{"palabra": p.get("word","").strip(), "inicio": round(p.get("start",0),2), "fin": round(p.get("end",0),2)} for p in words]
+    session["steps"]["transcription"] = True
 
-        prompt_no_verbal = f"""
-        Eres un analista estricto de lenguaje no verbal para pitches de emprendimiento.
-        Observa únicamente lo visible en los frames del video y evalúa:
-        - postura general
-        - contacto visual
-        - expresión facial
-        - uso de manos/gestos
-        - nivel de confianza percibido
+def _run_verbal_metrics_step(session: Dict[str, Any]) -> None:
+    if session["steps"]["verbal_metrics"]: return
+    pitch_text = session["transcription"]
+    segmentos = session.get("transcription_segments", []) or []
+    duracion = segmentos[-1]["fin"] if segmentos else 0
+    wpm = round((len(pitch_text.split()) / duracion) * 60) if duracion > 0 else 0
+    silencios = [{"inicio": segmentos[i]["fin"], "duracion_segundos": round(segmentos[i+1]["inicio"]-segmentos[i]["fin"], 2)} for i in range(len(segmentos)-1) if (segmentos[i+1]["inicio"]-segmentos[i]["fin"]) > 2.0]
+    muletillas = [" eh ", " este ", " mmm ", " o sea "]
+    for s in segmentos: s["muletillas_detectadas"] = [m.strip() for m in muletillas if m.strip() in s.get("texto","").lower()]
+    session["verbal_metrics"] = {"palabras_por_minuto": wpm, "nivel_velocidad": "Óptimo" if 130<=wpm<=160 else "Muy rápido" if wpm>160 else "Muy lento", "cantidad_muletillas": sum(pitch_text.lower().count(m) for m in muletillas), "silencios_largos": silencios}
+    session["steps"]["verbal_metrics"] = True
 
-        Devuelve un JSON válido con estas claves:
-        - "puntaje_global": número del 1 al 100
-        - "fortalezas": arreglo de 2 a 3 observaciones positivas
-        - "debilidades": arreglo de 2 a 3 observaciones a mejorar
-        - "recomendacion": un párrafo corto con la recomendación principal
-        - "postura": texto breve
-        - "contacto_visual": texto breve
-        - "uso_manos": texto breve
-        - "expresion_facial": texto breve
-        - "nivel_confianza": texto breve
-
-        Duración total estimada del video: {round(duration_seconds, 2)} segundos
-        Frames muestreados:
-        {frame_notes}
-        """.strip()
-
-        response = gemini_model.generate_content([prompt_no_verbal, *[frame["image"] for frame in sampled_frames]])
-        return {
-            "available": True,
-            "frames_sampled": len(sampled_frames),
-            "duration_seconds": round(duration_seconds, 2),
-            "analysis": response.text,
-        }
-    except Exception as e:
-        return {
-            "available": False,
-            "reason": str(e),
-        }
-
-@app.post("/api/v1/analyze-pitch")
-async def analyze_pitch(request: PitchRequest):
-    audio_path = None
-    raw_audio_path = None
-    raw_video_path = None
-    video_metadata = None
-    nonverbal_evaluation = None
-    try:
-        # 1. DESCARGAR Y EXTRAER AUDIO
-        print("Descargando audio del pitch...")
-        
-        # Generar un ID único (ej: '550e8400-e29b-41d4-a716-446655440000')
-        id_unico = str(uuid.uuid4())
-        nombre_archivo = f"temp_audio_{id_unico}"
-        nombre_video = f"temp_video_{id_unico}"
-
-        video_metadata = fetch_video_metadata(request.youtube_url)
-
-        raw_video_path = download_video_from_youtube(request.youtube_url, output_filename=nombre_video)
-        nonverbal_evaluation = analyze_nonverbal_with_gemini(raw_video_path)
-        
-        raw_audio_path = download_audio_from_youtube(request.youtube_url, output_filename=nombre_archivo)
-        audio_path = normalize_audio_for_whisper(raw_audio_path)
-        
-        # 2. DIMENSIÓN VERBAL (Groq + Whisper)
-        print("Enviando audio a Groq (Whisper-large-v3)...")
-        
-        whisper_context_prompt = f"El siguiente es un pitch de innovación sobre {video_metadata.get('title', 'tecnología')}. El orador usa muletillas como eh, mmm, ah, o sea."
-        
-        with open(audio_path, "rb") as file:
-            transcription = groq_client.audio.transcriptions.create(
-                file=(audio_path, file.read()),
-                model="whisper-large-v3",
-                prompt=whisper_context_prompt,
-                temperature=0,
-                response_format="verbose_json", 
-                language="es"
-            )
-        
-        pitch_text = getattr(transcription, "text", "")
-        segmentos = getattr(transcription, "segments", []) or [] # Aquí viene la lista con los tiempos
-        words = getattr(transcription, "words", []) or []
-        
-        # --- CÁLCULO DE MÉTRICAS VERBALES ---
-        total_palabras = len(pitch_text.split())
-        duracion_segundos = segmentos[-1]["end"] if segmentos else 0 # Cuándo termina el último segmento
-        
-        # 1. Velocidad de habla (Words Per Minute)
-        wpm = round((total_palabras / duracion_segundos) * 60) if duracion_segundos > 0 else 0
-        
-        # 2. Detección de silencios largos (Pausas > 2 segundos)
-        silencios_largos =[]
-        for i in range(len(segmentos) - 1):
-            fin_actual = segmentos[i]["end"]
-            inicio_siguiente = segmentos[i+1]["start"]
-            pausa = inicio_siguiente - fin_actual
-            if pausa > 2.0: # Si se queda callado más de 2 segundos
-                silencios_largos.append({
-                    "inicio": fin_actual,
-                    "duracion_segundos": round(pausa, 2)
-                })
-
-        # 3. Conteo rápido de muletillas (Aproximación basada en texto)
-        muletillas_comunes = [" eh ", " este ", " mmm ", " o sea "]
-        conteo_muletillas = sum(pitch_text.lower().count(m) for m in muletillas_comunes)
-
-        segmentos_detallados = []
-        for idx, segmento in enumerate(segmentos):
-            texto_segmento = segmento.get("text", "").strip()
-            texto_lower = texto_segmento.lower()
-            muletillas_en_segmento = [m.strip() for m in muletillas_comunes if m.strip() in texto_lower]
-            segmentos_detallados.append({
-                "indice": idx + 1,
-                "inicio": round(segmento.get("start", 0), 2),
-                "fin": round(segmento.get("end", 0), 2),
-                "duracion_segundos": round(segmento.get("end", 0) - segmento.get("start", 0), 2),
-                "texto": texto_segmento,
-                "muletillas_detectadas": muletillas_en_segmento,
-            })
-
-        palabras_con_tiempo = []
-        for palabra in words:
-            palabras_con_tiempo.append({
-                "palabra": palabra.get("word", "").strip(),
-                "inicio": round(palabra.get("start", 0), 2),
-                "fin": round(palabra.get("end", 0), 2),
-            })
-
-        metricas_verbales = {
-            "palabras_por_minuto": wpm,
-            "nivel_velocidad": "Óptimo" if 130 <= wpm <= 160 else "Muy rápido" if wpm > 160 else "Muy lento",
-            "cantidad_muletillas": conteo_muletillas,
-            "silencios_largos": silencios_largos
-        }
-        
-        # 3. DIMENSIÓN CONTENIDO (Gemini)
-        print("Evaluando contenido con Gemini...")
-        
-        # Este es nuestro "System Prompt" que le da personalidad de Jurado
-        prompt_evaluador = f"""
-        Eres un juez estricto pero constructivo de un fondo concursable de innovación en Chile (tipo CORFO o ANID).
-        Evalúa el siguiente texto de un pitch de emprendimiento. 
-        Devuelve tu análisis en formato JSON estructurado con las siguientes claves:
-        - "puntaje_global": un número del 1 al 100.
-        - "puntos_fuertes": un arreglo con 2 cosas buenas del discurso.
-        - "puntos_debiles": un arreglo con 2 cosas que faltaron (ej. modelo de negocios, equipo, tracción).
-        - "recomendacion": un párrafo corto con un consejo clave para mejorar.
-
-        Texto del pitch:
-        "{pitch_text}"
-        """
-        
-        # Llamada a la API de Gemini
-        respuesta_gemini = gemini_model.generate_content(prompt_evaluador)
-        evaluacion_contenido = respuesta_gemini.text
-        
-        # TODO: 4. DIMENSIÓN NO VERBAL (Postura/Manos) - Próximo paso
-        
-        return {
-            "status": "success",
-            "message": "Análisis Verbal y de Contenido procesados con éxito",
-            "data": {
-                "video_metadata": video_metadata,
-                "transcription": pitch_text,
-                "transcription_segments": segmentos_detallados,
-                "transcription_words": palabras_con_tiempo,
-                "content_evaluation": evaluacion_contenido,
-                "verbal_metrics": metricas_verbales,
-                "nonverbal_evaluation": nonverbal_evaluation,
-            }
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+def _run_content_step(session: Dict[str, Any]) -> None:
+    if session["steps"]["content"]: return
+    rubric_id_solicitada = session.get("rubric_id")
     
+    # --- RAG RETRIEVAL: BÚSQUEDA VECTORIAL EN NEON ---
+    print(f"🔍 Buscando bases en BD Vectorial para el concurso...")
+    db_session = next(get_db())
+    try:
+        vector_pitch = get_embedding(session['transcription'])
+        chunks_relevantes = db_session.query(RubricaChunk).filter(RubricaChunk.rubric_id == rubric_id_solicitada).order_by(RubricaChunk.embedding.cosine_distance(vector_pitch)).limit(5).all()
+        contexto_rag = "\n\n".join([chunk.texto for chunk in chunks_relevantes]) if chunks_relevantes else "Evalúa la innovación y mercado."
+    except Exception as e:
+        print(f"⚠️ Error en RAG Retrieval: {e}")
+        contexto_rag = "Evalúa la innovación y mercado."
     finally:
-        # Limpiar el archivo temporal
-        if audio_path and os.path.exists(audio_path):
-            os.remove(audio_path)
-        if raw_audio_path and os.path.exists(raw_audio_path):
-            os.remove(raw_audio_path)
-        if raw_video_path and os.path.exists(raw_video_path):
-            os.remove(raw_video_path)
+        db_session.close()
 
+    # OJO AQUÍ: Le gritamos a Gemini que NO hable, solo mande JSON
+    prompt = f"""Eres juez estricto. Basándote EXCLUSIVAMENTE en fragmentos de las bases oficiales: 
+    <BASES> {contexto_rag} </BASES>
+    Evalúa este pitch en JSON con: puntaje_global(1-100), puntos_fuertes(2), puntos_debiles(2), recomendacion.
+    REGLA VITAL: DEVUELVE ÚNICAMENTE EL JSON. NO escribas saludos, ni introducciones, ni texto fuera de las llaves.
+    Pitch: "{session['transcription']}" """
+    
+    import time
+    for intento in range(3):
+        try:
+            resp = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+            texto_bruto = resp.text.strip()
+            
+            # Limpieza extrema: Extraemos solo lo que está entre las llaves { }
+            start = texto_bruto.find("{")
+            end = texto_bruto.rfind("}")
+            if start != -1 and end != -1:
+                texto_limpio = texto_bruto[start:end+1]
+            else:
+                texto_limpio = texto_bruto
+                
+            session["content_evaluation"] = texto_limpio # Guardamos como string puro
+            session["steps"]["content"] = True
+            return
+        except Exception as e:
+            if "429" in str(e) and intento < 2: 
+                print(f"⏳ Cuota excedida en Contenido. Esperando 30s... (Intento {intento+1}/3)")
+                time.sleep(30)
+            else: 
+                session["content_evaluation"] = f'{{"error": "Fallo en IA: {str(e)}"}}'
+                session["steps"]["content"] = True
+                return
+
+def _run_nonverbal_step(session: Dict[str, Any]) -> None:
+    if session["steps"]["nonverbal"]: return
+    session["nonverbal_evaluation"] = analyze_nonverbal_with_gemini(session["raw_video_path"])
+    session["steps"]["nonverbal"] = True
 
 def _run_all_steps_bg(analysis_id: str):
     session = ANALYSIS_SESSIONS.get(analysis_id)
-    if not session:
-        return
+    if not session: return
     try:
-        if not session["steps"].get("transcription"):
-            _run_transcription_step(session)
-        if not session["steps"].get("verbal_metrics"):
-            _run_verbal_metrics_step(session)
-        if not session["steps"].get("content"):
-            _run_content_step(session)
-        if not session["steps"].get("nonverbal"):
-            _run_nonverbal_step(session)
+        print(f"\n🚀 [INICIANDO ANÁLISIS ASÍNCRONO] ID: {analysis_id}")
+        
+        print(f"⏳ [1/4] Ejecutando Transcripción (Whisper)...")
+        _run_transcription_step(session)
+        
+        print(f"⏳ [2/4] Calculando Métricas Verbales...")
+        _run_verbal_metrics_step(session)
+        
+        print(f"⏳ [3/4] Evaluando Contenido (RAG con Gemini)...")
+        _run_content_step(session)
+        
+        print(f"⏳ [4/4] Evaluando Lenguaje No Verbal (Visión)...")
+        _run_nonverbal_step(session)
+        
         _update_analysis_steps(analysis_id, session["steps"])
-    except Exception as e:
-        print(f"Error procesando pasos en segundo plano: {e}")
+        print(f"✅ [ÉXITO] ANÁLISIS COMPLETADO PARA ID: {analysis_id}\n")
+        
+    except Exception as e: 
+        print(f"❌ [ERROR] Falló el proceso en segundo plano: {e}")
 
 @app.post("/api/v1/analysis/upload")
 async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadFile = File(...), rubricId: str = Form(None)):
-    """Crear una sesión de análisis a partir de un video subido localmente."""
     analysis_id = str(uuid.uuid4())
-    suffix = Path(file.filename).suffix or ".mp4"
-    raw_video_name = f"temp_video_{analysis_id}{suffix}"
-    raw_audio_name = f"temp_audio_{analysis_id}.wav"
-
-    raw_video_path = str(BASE_DIR / raw_video_name)
-    raw_audio_path = None
-    audio_path = None
-
+    raw_video_path = str(BASE_DIR / f"temp_video_{analysis_id}{Path(file.filename).suffix or '.mp4'}")
     try:
-        # Guardar archivo subido en disco
-        with open(raw_video_path, "wb") as out_f:
-            content = await file.read()
-            out_f.write(content)
-
-        # Extraer audio y normalizar para Whisper
+        with open(raw_video_path, "wb") as out_f: out_f.write(await file.read())
         raw_audio_path = extract_audio_from_video(raw_video_path, output_filename=str(BASE_DIR / f"temp_audio_{analysis_id}"))
         audio_path = normalize_audio_for_whisper(raw_audio_path)
-
-        # Construir metadata básica
-        duration = get_video_duration_seconds(raw_video_path)
-        video_metadata = {
-            "title": file.filename,
-            "description": "Archivo subido localmente",
-            "channel": "local",
-            "duration_seconds": round(duration, 2),
-            "webpage_url": f"local://{file.filename}",
-        }
-
-        session = {
-            "analysis_id": analysis_id,
-            "youtube_url": f"local://{file.filename}",
-            "created_at": datetime.utcnow().isoformat(),
-            "raw_audio_path": raw_audio_path,
-            "audio_path": audio_path,
-            "raw_video_path": raw_video_path,
-            "video_metadata": video_metadata,
-            "transcription": None,
-            "transcription_segments": [],
-            "transcription_words": [],
-            "verbal_metrics": None,
-            "content_evaluation": None,
-            "nonverbal_evaluation": None,
-            "steps": {
-                "prepared": True,
-                "transcription": False,
-                "verbal_metrics": False,
-                "content": False,
-                "nonverbal": False,
-            },
-        }
-
+        video_metadata = {"title": file.filename, "description": "Local", "channel": "local", "duration_seconds": round(get_video_duration_seconds(raw_video_path), 2), "webpage_url": f"local://{file.filename}"}
+        session = {"analysis_id": analysis_id, "youtube_url": f"local://{file.filename}", "created_at": datetime.utcnow().isoformat(), "raw_audio_path": raw_audio_path, "audio_path": audio_path, "raw_video_path": raw_video_path, "video_metadata": video_metadata, "transcription": None, "transcription_segments": [], "transcription_words": [], "verbal_metrics": None, "content_evaluation": None, "nonverbal_evaluation": None, "steps": {"prepared": True, "transcription": False, "verbal_metrics": False, "content": False, "nonverbal": False}, "rubric_id": rubricId}
         ANALYSIS_SESSIONS[analysis_id] = session
         _save_analysis_record(analysis_id, video_metadata, f"local://{file.filename}", rubricId)
-        
-        # Correr análisis automáticamente
         background_tasks.add_task(_run_all_steps_bg, analysis_id)
-
-        return _build_step_response(session, "Sesión creada desde archivo local. Análisis en proceso...")
-
+        return {"status": "success", "analysis_id": analysis_id, "message": "Análisis en proceso..."}
     except Exception as e:
-        # Intentar eliminar archivos si algo falla
-        if raw_audio_path and os.path.exists(raw_audio_path):
-            os.remove(raw_audio_path)
-        if audio_path and os.path.exists(audio_path):
-            os.remove(audio_path)
-        if raw_video_path and os.path.exists(raw_video_path):
-            os.remove(raw_video_path)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/analysis/start")
+async def start_analysis(request: AnalysisStartRequest, background_tasks: BackgroundTasks):
+    analysis_id = str(uuid.uuid4())
+    raw_video_path = download_video_from_youtube(request.youtube_url, output_filename=f"temp_video_{analysis_id}")
+    raw_audio_path = download_audio_from_youtube(request.youtube_url, output_filename=f"temp_audio_{analysis_id}")
+    audio_path = normalize_audio_for_whisper(raw_audio_path)
+    video_metadata = fetch_video_metadata(request.youtube_url)
+    
+    session = {"analysis_id": analysis_id, "youtube_url": request.youtube_url, "created_at": datetime.utcnow().isoformat(), "raw_audio_path": raw_audio_path, "audio_path": audio_path, "raw_video_path": raw_video_path, "video_metadata": video_metadata, "transcription": None, "transcription_segments": [], "transcription_words": [], "verbal_metrics": None, "content_evaluation": None, "nonverbal_evaluation": None, "steps": {"prepared": True, "transcription": False, "verbal_metrics": False, "content": False, "nonverbal": False}, "rubric_id": request.rubric_id}
+    
+    ANALYSIS_SESSIONS[analysis_id] = session
+    _save_analysis_record(analysis_id, video_metadata, request.youtube_url, request.rubric_id)
+    
+    background_tasks.add_task(_run_all_steps_bg, analysis_id)
+    
+    return {"status": "success", "analysis_id": analysis_id}
+
+@app.get("/api/v1/analysis/{analysis_id}")
+async def get_analysis(analysis_id: str):
+    s = ANALYSIS_SESSIONS.get(analysis_id)
+    if not s: 
+        s = ANALYSIS_HISTORY.get(analysis_id)
+        if not s: 
+            raise HTTPException(status_code=404, detail="No encontrado")
+            
+        # Convertimos el diccionario a un String JSON para que React no explote
+        historial_content_string = json.dumps({"puntaje_global": s.get("score", 0)})
+        
+        return {
+            "status": "success", 
+            "steps": s.get("steps", {}), 
+            "data": {
+                "video_metadata": {"title": s.get("title", "")}, 
+                "content_evaluation": historial_content_string # <--- AHORA ES UN STRING
+            }
+        }
+        
+    return {
+        "status": "success", 
+        "steps": s["steps"], 
+        "data": {
+            "video_metadata": s.get("video_metadata"), 
+            "transcription": s.get("transcription"), 
+            "transcription_segments": s.get("transcription_segments"), 
+            "verbal_metrics": s.get("verbal_metrics"), 
+            "content_evaluation": s.get("content_evaluation"), 
+            "nonverbal_evaluation": s.get("nonverbal_evaluation")
+        }
+    }
+
+@app.delete("/api/v1/analysis/{analysis_id}")
+async def close_analysis(analysis_id: str):
+    s = ANALYSIS_SESSIONS.get(analysis_id)
+    if s:
+        for k in ["audio_path", "raw_audio_path", "raw_video_path"]:
+            if s.get(k) and os.path.exists(s[k]): os.remove(s[k])
+    return {"status": "success"}
+
+@app.post("/api/v1/analysis/{analysis_id}/transcription")
+async def run_transcription(analysis_id: str):
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    _run_transcription_step(session)
+    _update_analysis_steps(analysis_id, session["steps"])
+    return {"status": "success"}
+
+@app.post("/api/v1/analysis/{analysis_id}/verbal-metrics")
+async def run_verbal_metrics(analysis_id: str):
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    _run_verbal_metrics_step(session)
+    _update_analysis_steps(analysis_id, session["steps"])
+    return {"status": "success"}
+
+@app.post("/api/v1/analysis/{analysis_id}/content")
+async def run_content(analysis_id: str):
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    _run_content_step(session)
+    _update_analysis_steps(analysis_id, session["steps"])
+    return {"status": "success"}
+
+@app.post("/api/v1/analysis/{analysis_id}/nonverbal")
+async def run_nonverbal(analysis_id: str):
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    _run_nonverbal_step(session)
+    _update_analysis_steps(analysis_id, session["steps"])
+    return {"status": "success"}
