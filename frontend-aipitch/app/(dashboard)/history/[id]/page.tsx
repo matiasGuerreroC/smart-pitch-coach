@@ -22,6 +22,132 @@ export default function PitchDetailPage() {
     return `${sign}${value} ${unit}`;
   };
 
+  const tryParse = (maybeJson?: string | null) => {
+    if (!maybeJson) return null;
+    try {
+      return JSON.parse(maybeJson);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const renderContentFeedback = (raw?: string | null) => {
+    const parsed = tryParse(raw as any) as any;
+    if (!parsed) return <p className="text-slate-600 leading-relaxed whitespace-pre-line">{raw || 'Sin feedback disponible.'}</p>;
+
+    const score = parsed.puntaje_global ?? parsed.puntaje ?? parsed.score ?? null;
+    const strengths = parsed.puntos_fuertes || parsed.fortalezas || parsed.strengths || [];
+    const weaknesses = parsed.puntos_debiles || parsed.debilidades || parsed.weaknesses || [];
+    const recommendation = parsed.recomendacion || parsed.recommendation || parsed.recomendaciones || '';
+
+    return (
+      <div className="space-y-4">
+        {score !== null && (
+          <div className="flex items-center gap-4">
+            <div className="text-3xl font-extrabold text-blue-600">{score}</div>
+            <div className="text-sm text-slate-500 uppercase font-medium">Puntaje Global</div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-2">Puntos Fuertes</h4>
+            <ul className="list-disc list-inside text-slate-600">
+              {(strengths.length ? strengths : ['No hay puntos fuertes detectados']).map((s: string, i: number) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-2">Puntos Débiles</h4>
+            <ul className="list-disc list-inside text-slate-600">
+              {(weaknesses.length ? weaknesses : ['No hay puntos débiles detectados']).map((s: string, i: number) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {recommendation && (
+          <div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-2">Recomendación</h4>
+            <p className="text-slate-600">{recommendation}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderNonverbalFeedback = (raw?: string | null) => {
+    const parsed = tryParse(raw as any) as any;
+    if (!parsed) return <p className="text-slate-600 leading-relaxed whitespace-pre-line">{raw || 'Sin análisis no verbal.'}</p>;
+
+    const strengths = parsed.fortalezas || parsed.strengths || [];
+    const weaknesses = parsed.debilidades || parsed.weaknesses || [];
+    const recommendation = parsed.recomendacion || parsed.recommendation || '';
+    const posture = parsed.postura || parsed.posture || '';
+    const eyeContact = parsed.contacto_visual || parsed.contactoVisual || parsed.eye_contact || '';
+    const hands = parsed.uso_manos || parsed.hand_use || '';
+    const expression = parsed.expresion_facial || parsed.expression || '';
+    const confidence = parsed.nivel_confianza || parsed.nivel || parsed.confidence || '';
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h5 className="text-xs text-slate-400 uppercase">Postura</h5>
+            <p className="text-slate-600">{posture || '—'}</p>
+          </div>
+          <div>
+            <h5 className="text-xs text-slate-400 uppercase">Contacto Visual</h5>
+            <p className="text-slate-600">{eyeContact || '—'}</p>
+          </div>
+          <div>
+            <h5 className="text-xs text-slate-400 uppercase">Uso de Manos</h5>
+            <p className="text-slate-600">{hands || '—'}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h5 className="text-xs text-slate-400 uppercase">Expresión Facial</h5>
+            <p className="text-slate-600">{expression || '—'}</p>
+          </div>
+          <div>
+            <h5 className="text-xs text-slate-400 uppercase">Nivel de Confianza</h5>
+            <p className="text-slate-600">{confidence || '—'}</p>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-slate-700 mb-2">Fortalezas</h4>
+          <ul className="list-disc list-inside text-slate-600">
+            {(strengths.length ? strengths : ['No hay fortalezas detectadas']).map((s: string, i: number) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-slate-700 mb-2">Debilidades</h4>
+          <ul className="list-disc list-inside text-slate-600">
+            {(weaknesses.length ? weaknesses : ['No hay debilidades detectadas']).map((s: string, i: number) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+
+        {recommendation && (
+          <div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-2">Recomendación</h4>
+            <p className="text-slate-600">{recommendation}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (id) {
       api.getAnalysisDetail(id as string)
@@ -118,9 +244,7 @@ export default function PitchDetailPage() {
         {activeTab === 'content' && (
           <Card>
             <h3 className="text-lg font-bold text-slate-800 mb-3">Recomendaciones del Coach de IA</h3>
-            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-              {pitch.contentFeedback || 'El modelo determinó que la estructura argumentativa es sólida, pero se aconseja enfatizar con mayor claridad la propuesta de valor en los primeros 30 segundos del pitch para retener el interés.'}
-            </p>
+            {renderContentFeedback(pitch.contentFeedback)}
           </Card>
         )}
 
@@ -144,9 +268,7 @@ export default function PitchDetailPage() {
         {activeTab === 'nonverbal' && (
           <Card>
             <h3 className="text-lg font-bold text-slate-800 mb-2">Análisis de Contacto Visual y Postura</h3>
-            <p className="text-slate-600">
-              {pitch.nonVerbalFeedback || 'Buen encuadre de cámara. Se detecta un lenguaje corporal abierto, aunque se recomienda reducir los movimientos oscilatorios repetitivos.'}
-            </p>
+            {renderNonverbalFeedback(pitch.nonVerbalFeedback)}
           </Card>
         )}
 
