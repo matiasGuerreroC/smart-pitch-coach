@@ -1,42 +1,8 @@
 {
-  "eda694f1-7f07-43b0-b482-f513f550e748": {
-    "analysis_id": "eda694f1-7f07-43b0-b482-f513f550e748",
-    "title": "IMG_6142.MOV",
-    "created_at": "2026-05-26T23:01:12.761363",
-    "source_url": "local://IMG_6142.MOV",
-    "rubric_id": "1",
-    "rubric_name": "Y Combinator Standard",
-    "status": "completed",
-    "steps": {
-      "prepared": true,
-      "transcription": true,
-      "verbal_metrics": true,
-      "content": true,
-      "nonverbal": true
-    },
-    "score": 65
-  },
-  "3e2f3f57-a33e-4465-b997-e9840ccc1ba8": {
-    "analysis_id": "3e2f3f57-a33e-4465-b997-e9840ccc1ba8",
-    "title": "IMG_6142.MOV",
-    "created_at": "2026-05-26T23:11:11.157181",
-    "source_url": "local://IMG_6142.MOV",
-    "rubric_id": "8dde1cd5-8153-4984-a6c7-86269ee3f69b",
-    "rubric_name": "Rúbrica de bases_generales__crea_y_desarrolla_2026.pdf",
-    "status": "completed",
-    "steps": {
-      "prepared": true,
-      "transcription": true,
-      "verbal_metrics": true,
-      "content": true,
-      "nonverbal": true
-    },
-    "score": 68
-  },
-  "590f7c4f-80a4-405d-b246-0c34574b4618": {
-    "analysis_id": "590f7c4f-80a4-405d-b246-0c34574b4618",
+  "dbc932c0-a610-45c9-9a09-0f19f10c0f3b": {
+    "analysis_id": "dbc932c0-a610-45c9-9a09-0f19f10c0f3b",
     "title": "DANIELA BERRIOS - VIU 2025 UFRO",
-    "created_at": "2026-05-28T00:57:10.032624",
+    "created_at": "2026-05-29T00:05:16.790868",
     "source_url": "https://www.youtube.com/watch?v=ZP6JS00mu2M",
     "rubric_id": "anid_viu_2026",
     "rubric_name": "ANID VIU 2026",
@@ -48,6 +14,497 @@
       "content": true,
       "nonverbal": true
     },
-    "score": 60
+    "score": 45,
+    "transcription": " Hola, mi nombre es Daniela Berrios junto a mi equipo de trabajo compuesto por la doctora Antonieta Ruiz y la doctora Paola Fincheira les presento GEAS Woods. La agricultura representa casi el 70% del uso total de agua a nivel mundial. Sin embargo, enfrentamos un desafío crucial en este campo debido a la creciente demanda de alimentos impulsada por el constante aumento de la población humana. Esto ha generado estrés hídrico y una frecuencia alarmante de sequías graves. Lamentablemente, los agroquímicos convencionales utilizados en la agricultura han demostrado tener impactos adversos en el medioambiente y en la calidad de los alimentos, conllevando desequilibrios biológicos y una disminución de la biodiversidad. En respuesta a estos desafíos, presentamos GEAS Boost, un bioencapsulado de levaduras con nanopartículas para un crecimiento sostenible de hortalizas. Esta innovadora propuesta implica desarrollar un bioencapsulado en una matriz de alginato de sodio que contendrá nanopartículas de hierro y levaduras del suelo con capacidades de promoción del crecimiento de las plantas. Esto facilitará la captación de nutrientes al incrementar el desarrollo de las raíces en el suelo, mejorar la fotosíntesis y reducir el consumo de agua, al tiempo que disminuirá la necesidad de utilizar fertilizantes convencionales. Además, se distingue de otras soluciones existentes en el mercado, ya que ofrecemos una composición más simple limitada a levaduras de un solo tipo. El modelo de negocios de MIE-EVST se centrará en la venta directa del bioencapsulado en distintos formatos de venta. Nuestras alianzas estratégicas son la Dirección de Innovación UFRO, Habtech y las empresas Papa Arcoíri comercializadora AFSPA. Actualmente nos encontramos en un nivel TRL4 tras desarrollar un prototipo de este bioencapsulado a escala de laboratorio. Las actividades críticas del proyecto incluirán la validación, deliberación de nanopartículas y levaduras, analizar la posible toxicidad del hierro y definir las condiciones de almacenamiento para la comercialización de las biocapsulas y su conservación en el campo, así como evaluar el desempeño de estas en cultivos de lechuga y papa bajo condiciones de estrés hídrico. ¿Qué nos motiva? Beneficiar a los agricultores de nuestro país al evitar el uso de agroquímicos altamente perjudiciales para sus suelos y entornos.",
+    "transcription_segments": [
+      {
+        "indice": 1,
+        "inicio": 0,
+        "fin": 10.48,
+        "duracion_segundos": 10.48,
+        "texto": "Hola, mi nombre es Daniela Berrios junto a mi equipo de trabajo compuesto por la doctora Antonieta Ruiz y la doctora Paola Fincheira les presento GEAS Woods.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 2,
+        "inicio": 10.48,
+        "fin": 14.48,
+        "duracion_segundos": 4.0,
+        "texto": "La agricultura representa casi el 70% del uso total de agua a nivel mundial.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 3,
+        "inicio": 14.48,
+        "fin": 21.68,
+        "duracion_segundos": 7.2,
+        "texto": "Sin embargo, enfrentamos un desafío crucial en este campo debido a la creciente demanda de alimentos impulsada por el constante aumento de la población humana.",
+        "muletillas_detectadas": [
+          "este"
+        ]
+      },
+      {
+        "indice": 4,
+        "inicio": 21.68,
+        "fin": 25.24,
+        "duracion_segundos": 3.56,
+        "texto": "Esto ha generado estrés hídrico y una frecuencia alarmante de sequías graves.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 5,
+        "inicio": 25.24,
+        "fin": 29.12,
+        "duracion_segundos": 3.88,
+        "texto": "Lamentablemente, los agroquímicos convencionales utilizados en la agricultura",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 6,
+        "inicio": 29.12,
+        "fin": 33.4,
+        "duracion_segundos": 4.28,
+        "texto": "han demostrado tener impactos adversos en el medioambiente y en la calidad de los alimentos,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 7,
+        "inicio": 33.4,
+        "fin": 37.64,
+        "duracion_segundos": 4.24,
+        "texto": "conllevando desequilibrios biológicos y una disminución de la biodiversidad.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 8,
+        "inicio": 37.64,
+        "fin": 41.08,
+        "duracion_segundos": 3.44,
+        "texto": "En respuesta a estos desafíos, presentamos GEAS Boost,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 9,
+        "inicio": 41.08,
+        "fin": 45.72,
+        "duracion_segundos": 4.64,
+        "texto": "un bioencapsulado de levaduras con nanopartículas para un crecimiento sostenible de hortalizas.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 10,
+        "inicio": 45.72,
+        "fin": 49.04,
+        "duracion_segundos": 3.32,
+        "texto": "Esta innovadora propuesta implica desarrollar un bioencapsulado",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 11,
+        "inicio": 49.04,
+        "fin": 52.6,
+        "duracion_segundos": 3.56,
+        "texto": "en una matriz de alginato de sodio que contendrá nanopartículas de hierro",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 12,
+        "inicio": 52.6,
+        "fin": 56.2,
+        "duracion_segundos": 3.6,
+        "texto": "y levaduras del suelo con capacidades de promoción del crecimiento de las plantas.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 13,
+        "inicio": 56.2,
+        "fin": 61,
+        "duracion_segundos": 4.8,
+        "texto": "Esto facilitará la captación de nutrientes al incrementar el desarrollo de las raíces en el suelo,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 14,
+        "inicio": 61,
+        "fin": 64.04,
+        "duracion_segundos": 3.04,
+        "texto": "mejorar la fotosíntesis y reducir el consumo de agua,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 15,
+        "inicio": 64.04,
+        "fin": 67.56,
+        "duracion_segundos": 3.52,
+        "texto": "al tiempo que disminuirá la necesidad de utilizar fertilizantes convencionales.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 16,
+        "inicio": 67.56,
+        "fin": 70.28,
+        "duracion_segundos": 2.72,
+        "texto": "Además, se distingue de otras soluciones existentes en el mercado,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 17,
+        "inicio": 70.28,
+        "fin": 73.76,
+        "duracion_segundos": 3.48,
+        "texto": "ya que ofrecemos una composición más simple limitada a levaduras de un solo tipo.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 18,
+        "inicio": 73.76,
+        "fin": 78,
+        "duracion_segundos": 4.24,
+        "texto": "El modelo de negocios de MIE-EVST se centrará en la venta directa del bioencapsulado",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 19,
+        "inicio": 78,
+        "fin": 79.44,
+        "duracion_segundos": 1.44,
+        "texto": "en distintos formatos de venta.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 20,
+        "inicio": 79.44,
+        "fin": 82.56,
+        "duracion_segundos": 3.12,
+        "texto": "Nuestras alianzas estratégicas son la Dirección de Innovación UFRO,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 21,
+        "inicio": 82.56,
+        "fin": 86.88,
+        "duracion_segundos": 4.32,
+        "texto": "Habtech y las empresas Papa Arcoíri comercializadora AFSPA.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 22,
+        "inicio": 86.88,
+        "fin": 93.12,
+        "duracion_segundos": 6.24,
+        "texto": "Actualmente nos encontramos en un nivel TRL4 tras desarrollar un prototipo de este bioencapsulado a escala de laboratorio.",
+        "muletillas_detectadas": [
+          "este"
+        ]
+      },
+      {
+        "indice": 23,
+        "inicio": 93.12,
+        "fin": 98.4,
+        "duracion_segundos": 5.28,
+        "texto": "Las actividades críticas del proyecto incluirán la validación, deliberación de nanopartículas y levaduras,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 24,
+        "inicio": 98.4,
+        "fin": 102.48,
+        "duracion_segundos": 4.08,
+        "texto": "analizar la posible toxicidad del hierro y definir las condiciones de almacenamiento",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 25,
+        "inicio": 102.48,
+        "fin": 106,
+        "duracion_segundos": 3.52,
+        "texto": "para la comercialización de las biocapsulas y su conservación en el campo,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 26,
+        "inicio": 106,
+        "fin": 110.88,
+        "duracion_segundos": 4.88,
+        "texto": "así como evaluar el desempeño de estas en cultivos de lechuga y papa bajo condiciones de estrés hídrico.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 27,
+        "inicio": 110.88,
+        "fin": 118.32,
+        "duracion_segundos": 7.44,
+        "texto": "¿Qué nos motiva? Beneficiar a los agricultores de nuestro país al evitar el uso de agroquímicos altamente perjudiciales para sus suelos y entornos.",
+        "muletillas_detectadas": []
+      }
+    ],
+    "transcription_words": [],
+    "verbal_metrics": {
+      "palabras_por_minuto": 179,
+      "nivel_velocidad": "Muy rápido",
+      "cantidad_muletillas": 2,
+      "silencios_largos": []
+    },
+    "content_evaluation": "{\n  \"puntaje_global\": 45,\n  \"puntos_fuertes\": [\n    \"La propuesta de valor es clara y el producto (GEAS Boost) es un bioencapsulado de base científico-tecnológica que aborda un problema relevante (estrés hídrico, uso de agroquímicos) con un impacto potencial significativo en la competitividad y bienestar de los agricultores, alineándose con los objetivos de ANID de generar impactos económico-sociales y científico-tecnológicos relevantes para el país.\",\n    \"El nivel de avance TRL4 y la existencia de un prototipo a escala de laboratorio, junto con las actividades críticas de validación detalladas (toxicidad, almacenamiento, desempeño en cultivos bajo estrés hídrico), demuestran una comprensión de los \\\"Resultados tecnológicos\\\" y la necesidad de un \\\"plan de validación de estos resultados a través de la demostración del valor científico tecnológico\\\" conforme a las bases.\"\n  ],\n  \"puntos_debiles\": [\n    \"El pitch omite el 'principal requisito' del Instrumento VIU, que es que la base científica-tecnológica del emprendimiento provenga \\\"total o parcialmente de los resultados obtenidos por los estudiantes en sus investigaciones, trabajos o memorias de título, así como en las tesis de posgrado\\\". No se especifica el rol de Daniela Berrios ni si la tecnología tiene este origen estudiantil, lo cual es una deficiencia crítica para la elegibilidad.\",\n    \"No se cumple con el requisito explícito de \\\"identificar al menos un mentor, un panel de apoyo técnico o de expertos multidisciplinarios\\\". Aunque se mencionan alianzas estratégicas, no se presenta un mentor ni un panel dedicado a desarrollar la estrategia de negocios, acelerar la validación de prototipos o facilitar el acceso al mercado, como demandan las bases.\"\n  ],\n  \"recomendacion\": \"Para futuras postulaciones, es imperativo que el pitch aclare explícitamente cómo la base científica-tecnológica de GEAS Boost se origina en trabajos, memorias o tesis de pre/postgrado de los estudiantes o egresados. Además, se debe identificar formalmente a un mentor o panel de expertos multidisciplinarios, detallando su rol y contribución al desarrollo del modelo de negocios y la validación tecnológica, para cumplir cabalmente con los requisitos del instrumento VIU.\"\n}",
+    "nonverbal_evaluation": {
+      "available": true,
+      "frames_sampled": 6,
+      "duration_seconds": 119.45,
+      "analysis": "{\n  \"puntaje_global\": 92,\n  \"fortalezas\": [\n    \"Excelente contacto visual directo y sostenido, que transmite seguridad y honestidad.\",\n    \"Postura erguida y abierta, denotando profesionalismo y confianza.\",\n    \"Uso de manos natural y complementario, que refuerza el mensaje sin distraer.\",\n    \"Expresión facial seria y concentrada, adecuada al contexto científico y la seriedad del tema.\",\n    \"Alto nivel de confianza general, reflejado en la estabilidad y deliberación de sus gestos.\"\n  ],\n  \"debilidades\": [\n    \"Aunque su expresión facial es apropiada, una modulación ligeramente mayor en la gama de emociones podría intensificar la conexión con la audiencia en momentos clave (por ejemplo, al enfatizar un problema o una solución).\"\n  ],\n  \"recomendacion\": \"Continuar capitalizando la sólida comunicación no verbal. Para un impacto aún mayor, se podría practicar una ligera expansión del rango de expresiones faciales para subrayar puntos emocionales o de alto impacto, lo que podría aumentar aún más el engagement de la audiencia.\",\n  \"postura\": \"Profesional, erguida y estable, con los hombros relajados y el cuerpo orientado frontalmente hacia la cámara. Transmite apertura y autoridad.\",\n  \"contacto_visual\": \"Directo, constante y muy efectivo con la cámara. Demuestra seguridad, sinceridad y un profundo conocimiento del tema.\",\n  \"uso_manos\": \"Natural, moderado y efectivo. Las manos se utilizan para enfatizar puntos clave y complementar el discurso, manteniéndose dentro de un 'cajón de gestos' apropiado, sin ser excesivo ni repetitivo.\",\n  \"expresion_facial\": \"Generalmente seria y concentrada, lo cual es muy adecuado para la temática científica y la información que presenta. Refleja compromiso y profesionalismo, aunque con una gama emocional contenida.\",\n  \"nivel_confianza\": \"Alto. Se percibe una gran seguridad y dominio del contenido, manifestado a través de su postura firme, contacto visual inquebrantable y gestos naturales y controlados.\"\n}"
+    }
+  },
+  "e0b18fa9-09e4-490d-9d57-72c6afe5ce04": {
+    "analysis_id": "e0b18fa9-09e4-490d-9d57-72c6afe5ce04",
+    "title": "DANIELA BERRIOS - VIU 2025 UFRO",
+    "created_at": "2026-05-29T00:11:22.415380",
+    "source_url": "https://www.youtube.com/watch?v=ZP6JS00mu2M",
+    "rubric_id": "anid_viu_2026",
+    "rubric_name": "ANID VIU 2026",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 55,
+    "transcription": " Hola, mi nombre es Daniela Berrios junto a mi equipo de trabajo compuesto por la doctora Antonieta Ruiz y la doctora Paola Fincheira les presento GEAS Woods. La agricultura representa casi el 70% del uso total de agua a nivel mundial. Sin embargo, enfrentamos un desafío crucial en este campo debido a la creciente demanda de alimentos impulsada por el constante aumento de la población humana. Esto ha generado estrés hídrico y una frecuencia alarmante de sequías graves. Lamentablemente, los agroquímicos convencionales utilizados en la agricultura han demostrado tener impactos adversos en el medioambiente y en la calidad de los alimentos, conllevando desequilibrios biológicos y una disminución de la biodiversidad. En respuesta a estos desafíos, presentamos GEAS Boost, un bioencapsulado de levaduras con nanopartículas para un crecimiento sostenible de hortalizas. Esta innovadora propuesta implica desarrollar un bioencapsulado en una matriz de alginato de sodio que contendrá nanopartículas de hierro y levaduras del suelo con capacidades de promoción del crecimiento de las plantas. Esto facilitará la captación de nutrientes al incrementar el desarrollo de las raíces en el suelo, mejorar la fotosíntesis y reducir el consumo de agua, al tiempo que disminuirá la necesidad de utilizar fertilizantes convencionales. Además, se distingue de otras soluciones existentes en el mercado, ya que ofrecemos una composición más simple limitada a levaduras de un solo tipo. El modelo de negocios de MIEVST se centrará en la venta directa del bioencapsulado en distintos formatos de venta. Nuestras alianzas estratégicas son la Dirección de Innovación UFRO, Habtech y las empresas Papa Arcoíri comercializadora AFSPA. Actualmente nos encontramos en un nivel TRL4 tras desarrollar un prototipo de este bioencapsulado a escala de laboratorio. Las actividades críticas del proyecto incluirán la validación, deliberación de nanopartículas y levaduras, analizar la posible toxicidad del hierro y definir las condiciones de almacenamiento para la comercialización de las biocapsulas y su conservación en el campo, así como evaluar el desempeño de estas en cultivos de lechuga y papa bajo condiciones de estrés hídrico. ¿Qué nos motiva? Beneficiar a los agricultores de nuestro país al evitar el uso de agroquímicos altamente perjudiciales para sus suelos y entornos.",
+    "transcription_segments": [
+      {
+        "indice": 1,
+        "inicio": 0,
+        "fin": 10.52,
+        "duracion_segundos": 10.52,
+        "texto": "Hola, mi nombre es Daniela Berrios junto a mi equipo de trabajo compuesto por la doctora Antonieta Ruiz y la doctora Paola Fincheira les presento GEAS Woods.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 2,
+        "inicio": 10.52,
+        "fin": 14.48,
+        "duracion_segundos": 3.96,
+        "texto": "La agricultura representa casi el 70% del uso total de agua a nivel mundial.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 3,
+        "inicio": 14.48,
+        "fin": 21.68,
+        "duracion_segundos": 7.2,
+        "texto": "Sin embargo, enfrentamos un desafío crucial en este campo debido a la creciente demanda de alimentos impulsada por el constante aumento de la población humana.",
+        "muletillas_detectadas": [
+          "este"
+        ]
+      },
+      {
+        "indice": 4,
+        "inicio": 21.68,
+        "fin": 25.24,
+        "duracion_segundos": 3.56,
+        "texto": "Esto ha generado estrés hídrico y una frecuencia alarmante de sequías graves.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 5,
+        "inicio": 25.24,
+        "fin": 29.12,
+        "duracion_segundos": 3.88,
+        "texto": "Lamentablemente, los agroquímicos convencionales utilizados en la agricultura",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 6,
+        "inicio": 29.12,
+        "fin": 33.4,
+        "duracion_segundos": 4.28,
+        "texto": "han demostrado tener impactos adversos en el medioambiente y en la calidad de los alimentos,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 7,
+        "inicio": 33.4,
+        "fin": 37.64,
+        "duracion_segundos": 4.24,
+        "texto": "conllevando desequilibrios biológicos y una disminución de la biodiversidad.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 8,
+        "inicio": 37.64,
+        "fin": 41.08,
+        "duracion_segundos": 3.44,
+        "texto": "En respuesta a estos desafíos, presentamos GEAS Boost,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 9,
+        "inicio": 41.08,
+        "fin": 45.72,
+        "duracion_segundos": 4.64,
+        "texto": "un bioencapsulado de levaduras con nanopartículas para un crecimiento sostenible de hortalizas.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 10,
+        "inicio": 45.72,
+        "fin": 49.04,
+        "duracion_segundos": 3.32,
+        "texto": "Esta innovadora propuesta implica desarrollar un bioencapsulado",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 11,
+        "inicio": 49.04,
+        "fin": 52.6,
+        "duracion_segundos": 3.56,
+        "texto": "en una matriz de alginato de sodio que contendrá nanopartículas de hierro",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 12,
+        "inicio": 52.6,
+        "fin": 56.2,
+        "duracion_segundos": 3.6,
+        "texto": "y levaduras del suelo con capacidades de promoción del crecimiento de las plantas.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 13,
+        "inicio": 56.2,
+        "fin": 61,
+        "duracion_segundos": 4.8,
+        "texto": "Esto facilitará la captación de nutrientes al incrementar el desarrollo de las raíces en el suelo,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 14,
+        "inicio": 61,
+        "fin": 64.04,
+        "duracion_segundos": 3.04,
+        "texto": "mejorar la fotosíntesis y reducir el consumo de agua,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 15,
+        "inicio": 64.04,
+        "fin": 67.56,
+        "duracion_segundos": 3.52,
+        "texto": "al tiempo que disminuirá la necesidad de utilizar fertilizantes convencionales.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 16,
+        "inicio": 67.56,
+        "fin": 70.28,
+        "duracion_segundos": 2.72,
+        "texto": "Además, se distingue de otras soluciones existentes en el mercado,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 17,
+        "inicio": 70.28,
+        "fin": 73.76,
+        "duracion_segundos": 3.48,
+        "texto": "ya que ofrecemos una composición más simple limitada a levaduras de un solo tipo.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 18,
+        "inicio": 73.76,
+        "fin": 78,
+        "duracion_segundos": 4.24,
+        "texto": "El modelo de negocios de MIEVST se centrará en la venta directa del bioencapsulado",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 19,
+        "inicio": 78,
+        "fin": 79.44,
+        "duracion_segundos": 1.44,
+        "texto": "en distintos formatos de venta.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 20,
+        "inicio": 79.44,
+        "fin": 82.56,
+        "duracion_segundos": 3.12,
+        "texto": "Nuestras alianzas estratégicas son la Dirección de Innovación UFRO,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 21,
+        "inicio": 82.56,
+        "fin": 86.88,
+        "duracion_segundos": 4.32,
+        "texto": "Habtech y las empresas Papa Arcoíri comercializadora AFSPA.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 22,
+        "inicio": 86.88,
+        "fin": 93.12,
+        "duracion_segundos": 6.24,
+        "texto": "Actualmente nos encontramos en un nivel TRL4 tras desarrollar un prototipo de este bioencapsulado a escala de laboratorio.",
+        "muletillas_detectadas": [
+          "este"
+        ]
+      },
+      {
+        "indice": 23,
+        "inicio": 93.12,
+        "fin": 98.4,
+        "duracion_segundos": 5.28,
+        "texto": "Las actividades críticas del proyecto incluirán la validación, deliberación de nanopartículas y levaduras,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 24,
+        "inicio": 98.4,
+        "fin": 102.48,
+        "duracion_segundos": 4.08,
+        "texto": "analizar la posible toxicidad del hierro y definir las condiciones de almacenamiento",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 25,
+        "inicio": 102.48,
+        "fin": 106,
+        "duracion_segundos": 3.52,
+        "texto": "para la comercialización de las biocapsulas y su conservación en el campo,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 26,
+        "inicio": 106,
+        "fin": 110.88,
+        "duracion_segundos": 4.88,
+        "texto": "así como evaluar el desempeño de estas en cultivos de lechuga y papa bajo condiciones de estrés hídrico.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 27,
+        "inicio": 110.88,
+        "fin": 118.32,
+        "duracion_segundos": 7.44,
+        "texto": "¿Qué nos motiva? Beneficiar a los agricultores de nuestro país al evitar el uso de agroquímicos altamente perjudiciales para sus suelos y entornos.",
+        "muletillas_detectadas": []
+      }
+    ],
+    "transcription_words": [],
+    "verbal_metrics": {
+      "palabras_por_minuto": 179,
+      "nivel_velocidad": "Muy rápido",
+      "cantidad_muletillas": 2,
+      "silencios_largos": []
+    },
+    "content_evaluation": "{\n  \"puntaje_global\": 55,\n  \"puntos_fuertes\": [\n    \"La propuesta identifica claramente un problema relevante en la agricultura (estrés hídrico, agroquímicos) y ofrece una solución innovadora (bioencapsulado GEAS Boost) con beneficios explícitos (reducción de consumo de agua, menor uso de fertilizantes, mejora de fotosíntesis y desarrollo de raíces). Esto se alinea directamente con los objetivos de ANID de generar impactos económico-sociales y científico-tecnológicos relevantes para el país y contribuir al bienestar y calidad de vida de la población.\",\n    \"El proyecto se encuentra en un nivel TRL4 con un prototipo a escala de laboratorio, lo cual califica como un \\\"Resultado tecnológico\\\". Además, detalla un plan de validación de estos resultados que incluye la evaluación de toxicidad, condiciones de almacenamiento y desempeño en cultivos, demostrando la intención de validar el valor científico tecnológico y las características diferenciadoras del producto, tal como se exige en las bases.\"\n  ],\n  \"puntos_debiles\": [\n    \"El pitch omite por completo la identificación de un mentor, lo cual es un requisito MANDATORIO según las bases (\\\"Los postulantes deberán identificar al menos un mentor\\\"). La ausencia de este rol clave para la estrategia de negocios, aceleración de prototipos y acceso al mercado es una deficiencia crítica.\",\n    \"No se establece con claridad que la base científica-tecnológica del proyecto provenga \\\"total o parcialmente de los resultados obtenidos por los estudiantes en sus investigaciones, trabajos o memorias de título, así como en las tesis de posgrado cuando corresponda\\\", requisito fundamental del instrumento VIU. Aunque se presenta Daniela Berrios, no se especifica su rol como estudiante o egresada cuyo trabajo sea el origen de la investigación. Asimismo, la composición del equipo no se alinea explícitamente con la estructura de un(a) director(a) y un(a) profesor(a) guía/investigador(a) en la Universidad, como se menciona en el fragmento sobre el equipo.\"\n  ],\n  \"recomendacion\": \"Para futuras postulaciones, es IMPERATIVO abordar los requisitos no cumplidos. Primero, identificar y nombrar explícitamente al mentor, detallando cómo contribuirá al proyecto. Segundo, clarificar de forma inequívoca que la investigación base proviene de los trabajos de titulación o tesis de estudiantes/egresados, y describir la conformación del equipo en línea con los roles de director(a) y profesor(a) guía según lo establecido en las bases, asegurando que Daniela Berrios o el líder del proyecto cumpla con el perfil de estudiante/egresado. Sin estas correcciones, el proyecto carece de fundamento para ser evaluado dentro de los criterios establecidos para el instrumento.\"\n}",
+    "nonverbal_evaluation": {
+      "available": true,
+      "frames_sampled": 6,
+      "duration_seconds": 119.45,
+      "analysis": "{\n  \"puntaje_global\": 85,\n  \"fortalezas\": [\n    \"Excelente contacto visual directo y sostenido con la cámara, lo que denota sinceridad y compromiso.\",\n    \"Postura erguida y estable, transmitiendo profesionalismo y seguridad.\",\n    \"Uso de manos controlado y purposeful, que complementa y enfatiza el mensaje sin distraer.\",\n    \"Nivel de confianza alto y consistente, evidente en la fluidez de sus gestos y la mirada fija.\",\n    \"Expresión facial seria y concentrada, apropiada para la seriedad del tema tratado.\"\n  ],\n  \"debilidades\": [\n    \"Rango limitado de expresiones faciales; aunque la seriedad es adecuada para el tema, una mayor variación podría enriquecer la conexión emocional en ciertos puntos.\",\n    \"En algunos momentos, los hombros pueden parecer ligeramente tensos o inclinados hacia adelante, aunque esto es menor.\"\n  ],\n  \"recomendacion\": \"Para futuras presentaciones, la oradora podría explorar una mayor modulación en sus expresiones faciales. Pequeños cambios, como una ligera sonrisa empática al hablar de soluciones o un ceño un poco más marcado al describir problemas, podrían añadir profundidad emocional y mantener la atención del público de forma más dinámica, sin perder la seriedad ni el profesionalismo. Asegurarse de mantener los hombros completamente relajados y hacia atrás también podría proyectar una imagen aún más abierta y segura.\",\n  \"postura\": \"La postura es erguida y estable, transmitiendo una imagen de profesionalismo y compostura. Se mantiene mayormente centrada y con los hombros relativamente relajados, aunque en algunos momentos muestran una mínima tensión o inclinación hacia adelante. Es una postura sólida que denota presencia y confianza.\",\n  \"contacto_visual\": \"El contacto visual es excelente y sostenido. La oradora mira directamente a la cámara de manera consistente, lo que establece una conexión fuerte y directa con la audiencia. Este factor es una de sus mayores fortalezas, demostrando sinceridad y confianza en su mensaje.\",\n  \"uso_manos\": \"El uso de manos es adecuado y funcional. Los gestos son controlados, de tamaño moderado y se utilizan para enfatizar puntos clave y apoyar la narración. Las palmas abiertas y los movimientos fluidos contribuyen a una comunicación clara y confiable, sin ser excesivos ni distractores.\",\n  \"expresion_facial\": \"La expresión facial es predominantemente seria y concentrada. Esta seriedad es apropiada para la naturaleza científica y la gravedad del tema (estrés hídrico, sequías). Si bien denota profesionalismo y enfoque, la falta de una mayor variedad de expresiones puede limitar la conexión emocional en ciertos momentos del discurso.\",\n  \"nivel_confianza\": \"El nivel de confianza es alto. Se manifiesta a través del contacto visual ininterrumpido, la postura estable y el uso efectivo de las manos. La oradora parece estar muy cómoda y segura al presentar su información, lo que refuerza su credibilidad y autoridad en el tema.\"\n}"
+    }
   }
 }

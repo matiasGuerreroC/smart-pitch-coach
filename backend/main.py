@@ -134,6 +134,12 @@ def _save_analysis_record(analysis_id: str, video_metadata: Dict[str, Any], sour
         "status": "created",
         "steps": {},
         "score": 0,
+        "transcription": "",
+        "transcription_segments": [],
+        "transcription_words": [],
+        "verbal_metrics": None,
+        "content_evaluation": "",
+        "nonverbal_evaluation": None,
     }
     _persist_history_to_disk()
 
@@ -145,6 +151,12 @@ def _update_analysis_steps(analysis_id: str, steps: Dict[str, Any]) -> None:
         session = ANALYSIS_SESSIONS.get(analysis_id)
         if session:
             ANALYSIS_HISTORY[analysis_id]["score"] = _extract_score_from_content(session.get("content_evaluation"))
+            ANALYSIS_HISTORY[analysis_id]["transcription"] = session.get("transcription", "") or ""
+            ANALYSIS_HISTORY[analysis_id]["transcription_segments"] = session.get("transcription_segments", []) or []
+            ANALYSIS_HISTORY[analysis_id]["transcription_words"] = session.get("transcription_words", []) or []
+            ANALYSIS_HISTORY[analysis_id]["verbal_metrics"] = session.get("verbal_metrics")
+            ANALYSIS_HISTORY[analysis_id]["content_evaluation"] = session.get("content_evaluation", "") or ""
+            ANALYSIS_HISTORY[analysis_id]["nonverbal_evaluation"] = session.get("nonverbal_evaluation")
             if not ANALYSIS_HISTORY[analysis_id].get("title"):
                 ANALYSIS_HISTORY[analysis_id]["title"] = session.get("video_metadata", {}).get("title", "")
         _persist_history_to_disk()
@@ -713,7 +725,13 @@ async def get_analysis(analysis_id: str):
             "steps": s.get("steps", {}), 
             "data": {
                 "video_metadata": {"title": s.get("title", "")}, 
-                "content_evaluation": historial_content_string, # <--- AHORA ES UN STRING
+                "score": s.get("score", 0),
+                "transcription": s.get("transcription", ""),
+                "transcription_segments": s.get("transcription_segments", []),
+                "transcription_words": s.get("transcription_words", []),
+                "verbal_metrics": s.get("verbal_metrics"),
+                "content_evaluation": s.get("content_evaluation", ""),
+                "nonverbal_evaluation": s.get("nonverbal_evaluation"),
                 "evolution_metrics": _calculate_evolution_metrics(analysis_id)
             }
         }
@@ -723,8 +741,10 @@ async def get_analysis(analysis_id: str):
         "steps": s["steps"], 
         "data": {
             "video_metadata": s.get("video_metadata"), 
+            "score": _extract_score_from_content(s.get("content_evaluation")) if isinstance(s.get("content_evaluation"), (str, dict)) else s.get("score", 0),
             "transcription": s.get("transcription"), 
             "transcription_segments": s.get("transcription_segments"), 
+            "transcription_words": s.get("transcription_words"),
             "verbal_metrics": s.get("verbal_metrics"), 
             "content_evaluation": s.get("content_evaluation"), 
             "nonverbal_evaluation": s.get("nonverbal_evaluation"),

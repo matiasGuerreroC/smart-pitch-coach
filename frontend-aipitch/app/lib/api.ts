@@ -45,6 +45,9 @@ type HistoryRecord = {
   status?: string;
   steps?: Record<string, boolean>;
   score?: number;
+  transcription?: string;
+  content_evaluation?: string | null;
+  nonverbal_evaluation?: { analysis?: string | null } | null;
 };
 
 type SessionResponse = {
@@ -53,6 +56,7 @@ type SessionResponse = {
   steps: Record<string, boolean>;
   data: {
     video_metadata?: { title?: string; webpage_url?: string };
+    score?: number;
     transcription?: string | null;
     verbal_metrics?: {
       cantidad_muletillas?: number;
@@ -84,12 +88,25 @@ function mapHistoryRecord(record: HistoryRecord): Analysis {
 function mapHistoryDetail(record: HistoryRecord): Analysis {
   return {
     ...mapHistoryRecord(record),
-    transcription: undefined,
+    transcription: record.transcription || undefined,
     verbalMetrics: undefined,
-    contentFeedback: undefined,
-    nonVerbalFeedback: undefined,
+    contentFeedback: formatContentEvaluation(record.content_evaluation),
+    nonVerbalFeedback: record.nonverbal_evaluation?.analysis || undefined,
     evolutionMetrics: undefined,
   };
+}
+
+function formatContentEvaluation(raw?: string | null): string | undefined {
+  if (!raw) return undefined;
+  try {
+    if (typeof raw === 'string') {
+      const parsed = JSON.parse(raw);
+      return JSON.stringify(parsed, null, 2);
+    }
+    return JSON.stringify(raw, null, 2);
+  } catch (e) {
+    return raw;
+  }
 }
 
 function mapSessionResponse(payload: SessionResponse): Analysis {
@@ -97,7 +114,7 @@ function mapSessionResponse(payload: SessionResponse): Analysis {
     id: payload.analysis_id,
     title: payload.data?.video_metadata?.title || 'Análisis sin título',
     date: new Date().toLocaleDateString(),
-    score: 0,
+    score: payload.data?.score ?? 0,
     status: payload.status === 'success' ? 'processing' : 'failed',
     transcription: payload.data?.transcription || undefined,
     verbalMetrics: payload.data?.verbal_metrics
@@ -107,7 +124,7 @@ function mapSessionResponse(payload: SessionResponse): Analysis {
           toneEnergy: payload.data.verbal_metrics.nivel_velocidad ?? 'N/A',
         }
       : undefined,
-    contentFeedback: payload.data?.content_evaluation || undefined,
+    contentFeedback: formatContentEvaluation(payload.data?.content_evaluation) || undefined,
     nonVerbalFeedback: payload.data?.nonverbal_evaluation?.analysis || undefined,
     evolutionMetrics: payload.data?.evolution_metrics
       ? {
