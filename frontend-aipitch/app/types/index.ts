@@ -5,6 +5,13 @@ export interface Analysis {
   date: string;
   score: number;
   status: 'completed' | 'processing' | 'failed';
+  progressPercent?: number;
+  progressSteps?: {
+    transcription?: boolean;
+    verbal_metrics?: boolean;
+    content?: boolean;
+    nonverbal?: boolean;
+  };
   rubricName?: string;
   transcription?: string;
   verbalMetrics?: {

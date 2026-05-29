@@ -15,6 +15,13 @@ export default function PitchDetailPage() {
   const [activeTab, setActiveTab] = useState<TabType>('content');
   const [isFallback, setIsFallback] = useState(false);
 
+  const progressFlow: Array<{ key: 'transcription' | 'verbal_metrics' | 'content' | 'nonverbal'; label: string }> = [
+    { key: 'transcription', label: 'Transcribiendo audio (Whisper)' },
+    { key: 'verbal_metrics', label: 'Calculando métricas verbales' },
+    { key: 'content', label: 'Evaluando contenido con LLM' },
+    { key: 'nonverbal', label: 'Analizando comunicación no verbal' },
+  ];
+
   const evolution = pitch?.evolutionMetrics;
 
   const formatDelta = (value: number, unit: string) => {
@@ -26,19 +33,34 @@ export default function PitchDetailPage() {
     if (!maybeJson) return null;
     try {
       return JSON.parse(maybeJson);
-    } catch (e) {
+    } catch {
       return null;
     }
   };
 
+  const getStringArray = (value: unknown, fallback: string): string[] => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => (typeof item === 'string' ? item : String(item)))
+        .filter(Boolean);
+    }
+    return [fallback];
+  };
+
+  const getStringValue = (value: unknown, fallback = ''): string => {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return fallback;
+    return String(value);
+  };
+
   const renderContentFeedback = (raw?: string | null) => {
-    const parsed = tryParse(raw as any) as any;
+    const parsed = tryParse(raw) as Record<string, unknown> | null;
     if (!parsed) return <p className="text-slate-600 leading-relaxed whitespace-pre-line">{raw || 'Sin feedback disponible.'}</p>;
 
     const score = parsed.puntaje_global ?? parsed.puntaje ?? parsed.score ?? null;
-    const strengths = parsed.puntos_fuertes || parsed.fortalezas || parsed.strengths || [];
-    const weaknesses = parsed.puntos_debiles || parsed.debilidades || parsed.weaknesses || [];
-    const recommendation = parsed.recomendacion || parsed.recommendation || parsed.recomendaciones || '';
+    const strengths = getStringArray(parsed.puntos_fuertes ?? parsed.fortalezas ?? parsed.strengths, 'No hay puntos fuertes detectados');
+    const weaknesses = getStringArray(parsed.puntos_debiles ?? parsed.debilidades ?? parsed.weaknesses, 'No hay puntos débiles detectados');
+    const recommendation = getStringValue(parsed.recomendacion ?? parsed.recommendation ?? parsed.recomendaciones, '');
 
     return (
       <div className="space-y-4">
@@ -53,7 +75,7 @@ export default function PitchDetailPage() {
           <div>
             <h4 className="text-sm font-semibold text-slate-700 mb-2">Puntos Fuertes</h4>
             <ul className="list-disc list-inside text-slate-600">
-              {(strengths.length ? strengths : ['No hay puntos fuertes detectados']).map((s: string, i: number) => (
+              {strengths.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
             </ul>
@@ -62,7 +84,7 @@ export default function PitchDetailPage() {
           <div>
             <h4 className="text-sm font-semibold text-slate-700 mb-2">Puntos Débiles</h4>
             <ul className="list-disc list-inside text-slate-600">
-              {(weaknesses.length ? weaknesses : ['No hay puntos débiles detectados']).map((s: string, i: number) => (
+              {weaknesses.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
             </ul>
@@ -80,17 +102,17 @@ export default function PitchDetailPage() {
   };
 
   const renderNonverbalFeedback = (raw?: string | null) => {
-    const parsed = tryParse(raw as any) as any;
+    const parsed = tryParse(raw) as Record<string, unknown> | null;
     if (!parsed) return <p className="text-slate-600 leading-relaxed whitespace-pre-line">{raw || 'Sin análisis no verbal.'}</p>;
 
-    const strengths = parsed.fortalezas || parsed.strengths || [];
-    const weaknesses = parsed.debilidades || parsed.weaknesses || [];
-    const recommendation = parsed.recomendacion || parsed.recommendation || '';
-    const posture = parsed.postura || parsed.posture || '';
-    const eyeContact = parsed.contacto_visual || parsed.contactoVisual || parsed.eye_contact || '';
-    const hands = parsed.uso_manos || parsed.hand_use || '';
-    const expression = parsed.expresion_facial || parsed.expression || '';
-    const confidence = parsed.nivel_confianza || parsed.nivel || parsed.confidence || '';
+    const strengths = getStringArray(parsed.fortalezas ?? parsed.strengths, 'No hay fortalezas detectadas');
+    const weaknesses = getStringArray(parsed.debilidades ?? parsed.weaknesses, 'No hay debilidades detectadas');
+    const recommendation = getStringValue(parsed.recomendacion ?? parsed.recommendation, '');
+    const posture = getStringValue(parsed.postura ?? parsed.posture, '');
+    const eyeContact = getStringValue(parsed.contacto_visual ?? parsed.contactoVisual ?? parsed.eye_contact, '');
+    const hands = getStringValue(parsed.uso_manos ?? parsed.hand_use, '');
+    const expression = getStringValue(parsed.expresion_facial ?? parsed.expression, '');
+    const confidence = getStringValue(parsed.nivel_confianza ?? parsed.nivel ?? parsed.confidence, '');
 
     return (
       <div className="space-y-4">
@@ -123,7 +145,7 @@ export default function PitchDetailPage() {
         <div>
           <h4 className="text-sm font-semibold text-slate-700 mb-2">Fortalezas</h4>
           <ul className="list-disc list-inside text-slate-600">
-            {(strengths.length ? strengths : ['No hay fortalezas detectadas']).map((s: string, i: number) => (
+            {strengths.map((s, i) => (
               <li key={i}>{s}</li>
             ))}
           </ul>
@@ -132,7 +154,7 @@ export default function PitchDetailPage() {
         <div>
           <h4 className="text-sm font-semibold text-slate-700 mb-2">Debilidades</h4>
           <ul className="list-disc list-inside text-slate-600">
-            {(weaknesses.length ? weaknesses : ['No hay debilidades detectadas']).map((s: string, i: number) => (
+            {weaknesses.map((s, i) => (
               <li key={i}>{s}</li>
             ))}
           </ul>
@@ -148,12 +170,41 @@ export default function PitchDetailPage() {
     );
   };
 
+  const currentStepLabel = () => {
+    if (!pitch?.progressSteps) return 'Preparando análisis';
+    const next = progressFlow.find((step) => !pitch.progressSteps?.[step.key]);
+    return next ? next.label : 'Análisis completado';
+  };
+
   useEffect(() => {
-    if (id) {
-      api.getAnalysisDetail(id as string)
-        .then(setPitch)
-        .catch(() => setIsFallback(true));
-    }
+    if (!id) return;
+
+    let isMounted = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const fetchWithPolling = async () => {
+      try {
+        const detail = await api.getAnalysisDetail(id as string);
+        if (!isMounted) return;
+        setPitch(detail);
+        setIsFallback(false);
+
+        if (detail.status === 'processing') {
+          timer = setTimeout(fetchWithPolling, 2500);
+        }
+      } catch {
+        if (!isMounted) return;
+        setIsFallback(true);
+        timer = setTimeout(fetchWithPolling, 4000);
+      }
+    };
+
+    fetchWithPolling();
+
+    return () => {
+      isMounted = false;
+      if (timer) clearTimeout(timer);
+    };
   }, [id]);
 
   if (!pitch) return <div className="text-center py-12 text-slate-500">Cargando análisis...</div>;
@@ -173,6 +224,37 @@ export default function PitchDetailPage() {
           <div className="text-xs font-medium text-blue-500 uppercase tracking-wider">Puntaje Global</div>
         </div>
       </div>
+
+      {pitch.status === 'processing' && (
+        <Card className="border-blue-100 bg-blue-50/60">
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <div>
+              <h3 className="text-base font-bold text-blue-800">Análisis en progreso</h3>
+              <p className="text-sm text-blue-700">{currentStepLabel()}</p>
+            </div>
+            <div className="text-2xl font-extrabold text-blue-600">{pitch.progressPercent ?? 0}%</div>
+          </div>
+
+          <div className="w-full h-2 rounded-full bg-blue-100 overflow-hidden">
+            <div
+              className="h-full bg-blue-600 transition-all duration-500"
+              style={{ width: `${pitch.progressPercent ?? 0}%` }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4 text-sm">
+            {progressFlow.map((step) => {
+              const done = Boolean(pitch.progressSteps?.[step.key]);
+              return (
+                <div key={step.key} className={`rounded-lg px-3 py-2 border ${done ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-500'}`}>
+                  <span className="mr-2">{done ? '✔' : '…'}</span>
+                  {step.label}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="md:col-span-4 border-dashed border-slate-200 bg-slate-50/80">
@@ -252,15 +334,15 @@ export default function PitchDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="text-center">
               <div className="text-xs font-semibold text-slate-400 uppercase">Muletillas Detectadas</div>
-              <div className="text-3xl font-bold text-slate-800 mt-2">{pitch.verbalMetrics?.fillerWordsCount || 8}</div>
+              <div className="text-3xl font-bold text-slate-800 mt-2">{pitch.verbalMetrics?.fillerWordsCount ?? 0}</div>
             </Card>
             <Card className="text-center">
               <div className="text-xs font-semibold text-slate-400 uppercase">Velocidad de Habla</div>
-              <div className="text-3xl font-bold text-slate-800 mt-2">{pitch.verbalMetrics?.wordsPerMinute || 135} <span className="text-sm font-normal text-slate-500">PPM</span></div>
+              <div className="text-3xl font-bold text-slate-800 mt-2">{pitch.verbalMetrics?.wordsPerMinute ?? 0} <span className="text-sm font-normal text-slate-500">PPM</span></div>
             </Card>
             <Card className="text-center">
               <div className="text-xs font-semibold text-slate-400 uppercase">Energía del Tono</div>
-              <div className="text-3xl font-bold text-emerald-600 mt-2">{pitch.verbalMetrics?.toneEnergy || 'Estable'}</div>
+              <div className="text-3xl font-bold text-emerald-600 mt-2">{pitch.verbalMetrics?.toneEnergy ?? 'Sin datos'}</div>
             </Card>
           </div>
         )}

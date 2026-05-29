@@ -28,7 +28,7 @@ export default function HomePage() {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Tarjeta de Historial (Ocupa 2 columnas en desktop) */}
         <Link href="/history" className="md:col-span-2 group">
-          <Card className="h-full bg-gradient-to-br from-white to-slate-50 border-slate-200 group-hover:border-blue-300 transition-colors">
+          <Card className="h-full bg-linear-to-br from-white to-slate-50 border-slate-200 group-hover:border-blue-300 transition-colors">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">Últimos Análisis</h2>

@@ -53,7 +53,7 @@ type HistoryRecord = {
 type SessionResponse = {
   analysis_id: string;
   status: string;
-  steps: Record<string, boolean>;
+  steps?: Record<string, boolean>;
   data: {
     video_metadata?: { title?: string; webpage_url?: string };
     score?: number;
@@ -104,18 +104,34 @@ function formatContentEvaluation(raw?: string | null): string | undefined {
       return JSON.stringify(parsed, null, 2);
     }
     return JSON.stringify(raw, null, 2);
-  } catch (e) {
+  } catch {
     return raw;
   }
 }
 
+function computeProgress(steps?: Record<string, boolean>) {
+  const tracked = ['transcription', 'verbal_metrics', 'content', 'nonverbal'];
+  const completed = tracked.filter((key) => Boolean(steps?.[key])).length;
+  const percent = Math.round((completed / tracked.length) * 100);
+  const isCompleted = completed === tracked.length;
+  return { percent, isCompleted };
+}
+
 function mapSessionResponse(payload: SessionResponse): Analysis {
+  const { percent, isCompleted } = computeProgress(payload.steps);
   return {
     id: payload.analysis_id,
     title: payload.data?.video_metadata?.title || 'Análisis sin título',
     date: new Date().toLocaleDateString(),
     score: payload.data?.score ?? 0,
-    status: payload.status === 'success' ? 'processing' : 'failed',
+    status: payload.status !== 'success' ? 'failed' : isCompleted ? 'completed' : 'processing',
+    progressPercent: percent,
+    progressSteps: {
+      transcription: Boolean(payload.steps?.transcription),
+      verbal_metrics: Boolean(payload.steps?.verbal_metrics),
+      content: Boolean(payload.steps?.content),
+      nonverbal: Boolean(payload.steps?.nonverbal),
+    },
     transcription: payload.data?.transcription || undefined,
     verbalMetrics: payload.data?.verbal_metrics
       ? {
