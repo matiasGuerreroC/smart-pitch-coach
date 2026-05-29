@@ -45,14 +45,18 @@ type HistoryRecord = {
   status?: string;
   steps?: Record<string, boolean>;
   score?: number;
+  transcription?: string;
+  content_evaluation?: string | null;
+  nonverbal_evaluation?: { analysis?: string | null } | null;
 };
 
 type SessionResponse = {
   analysis_id: string;
   status: string;
-  steps: Record<string, boolean>;
+  steps?: Record<string, boolean>;
   data: {
     video_metadata?: { title?: string; webpage_url?: string };
+    score?: number;
     transcription?: string | null;
     verbal_metrics?: {
       cantidad_muletillas?: number;
@@ -61,6 +65,12 @@ type SessionResponse = {
     } | null;
     content_evaluation?: string | null;
     nonverbal_evaluation?: { analysis?: string | null } | null;
+    evolution_metrics?: {
+      delta_score?: number;
+      delta_wpm?: number;
+      delta_fillers?: number;
+      previous_id?: string;
+    } | null;
   };
 };
 
@@ -78,20 +88,50 @@ function mapHistoryRecord(record: HistoryRecord): Analysis {
 function mapHistoryDetail(record: HistoryRecord): Analysis {
   return {
     ...mapHistoryRecord(record),
-    transcription: undefined,
+    transcription: record.transcription || undefined,
     verbalMetrics: undefined,
-    contentFeedback: undefined,
-    nonVerbalFeedback: undefined,
+    contentFeedback: formatContentEvaluation(record.content_evaluation),
+    nonVerbalFeedback: record.nonverbal_evaluation?.analysis || undefined,
+    evolutionMetrics: undefined,
   };
 }
 
+function formatContentEvaluation(raw?: string | null): string | undefined {
+  if (!raw) return undefined;
+  try {
+    if (typeof raw === 'string') {
+      const parsed = JSON.parse(raw);
+      return JSON.stringify(parsed, null, 2);
+    }
+    return JSON.stringify(raw, null, 2);
+  } catch {
+    return raw;
+  }
+}
+
+function computeProgress(steps?: Record<string, boolean>) {
+  const tracked = ['transcription', 'verbal_metrics', 'content', 'nonverbal'];
+  const completed = tracked.filter((key) => Boolean(steps?.[key])).length;
+  const percent = Math.round((completed / tracked.length) * 100);
+  const isCompleted = completed === tracked.length;
+  return { percent, isCompleted };
+}
+
 function mapSessionResponse(payload: SessionResponse): Analysis {
+  const { percent, isCompleted } = computeProgress(payload.steps);
   return {
     id: payload.analysis_id,
     title: payload.data?.video_metadata?.title || 'Análisis sin título',
     date: new Date().toLocaleDateString(),
-    score: 0,
-    status: payload.status === 'success' ? 'processing' : 'failed',
+    score: payload.data?.score ?? 0,
+    status: payload.status !== 'success' ? 'failed' : isCompleted ? 'completed' : 'processing',
+    progressPercent: percent,
+    progressSteps: {
+      transcription: Boolean(payload.steps?.transcription),
+      verbal_metrics: Boolean(payload.steps?.verbal_metrics),
+      content: Boolean(payload.steps?.content),
+      nonverbal: Boolean(payload.steps?.nonverbal),
+    },
     transcription: payload.data?.transcription || undefined,
     verbalMetrics: payload.data?.verbal_metrics
       ? {
@@ -100,8 +140,16 @@ function mapSessionResponse(payload: SessionResponse): Analysis {
           toneEnergy: payload.data.verbal_metrics.nivel_velocidad ?? 'N/A',
         }
       : undefined,
-    contentFeedback: payload.data?.content_evaluation || undefined,
+    contentFeedback: formatContentEvaluation(payload.data?.content_evaluation) || undefined,
     nonVerbalFeedback: payload.data?.nonverbal_evaluation?.analysis || undefined,
+    evolutionMetrics: payload.data?.evolution_metrics
+      ? {
+          deltaScore: payload.data.evolution_metrics.delta_score ?? 0,
+          deltaWpm: payload.data.evolution_metrics.delta_wpm ?? 0,
+          deltaFillers: payload.data.evolution_metrics.delta_fillers ?? 0,
+          previousId: payload.data.evolution_metrics.previous_id ?? '',
+        }
+      : undefined,
   };
 }
 

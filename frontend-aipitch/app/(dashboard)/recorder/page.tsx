@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '../../components/ui/Card';
 import { api } from '../../lib/api';
 import { Rubric } from '../../types';
 
 export default function RecorderPage() {
+  const router = useRouter();
   const [rubrics, setRubrics] = useState<Rubric[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -40,11 +42,11 @@ export default function RecorderPage() {
 
     try {
       const payload = mode === 'url' ? url : file!;
-      await api.startAnalysis({ type: mode, payload, rubricId: selectedRubric });
-      alert('¡Video enviado exitosamente! El análisis se está procesando.');
+      const response = await api.startAnalysis({ type: mode, payload, rubricId: selectedRubric });
       setUrl('');
       setFile(null);
-    } catch (error) {
+      router.push(`/history/${response.analysis_id}`);
+    } catch {
       alert('Ocurrió un error al enviar el video.');
     } finally {
       setLoading(false);

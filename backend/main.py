@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import jwt
 import json
 import os
 import subprocess
 import uuid
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -67,6 +68,17 @@ class RubricCreateRequest(BaseModel):
     name: str
     description: str
     criteria: Optional[list[str]] = None
+
+# ============================================================================
+# CONFIGURACIÓN SEGURIDAD JWT
+# ============================================================================
+SECRET_KEY = os.getenv("JWT_SECRET", "super_secreto_mvp_aipitch_2026")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # El token dura 24 horas
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 ANALYSIS_SESSIONS: Dict[str, Dict[str, Any]] = {}
 URL_TO_ANALYSIS_ID: Dict[str, str] = {}
@@ -134,6 +146,12 @@ def _save_analysis_record(analysis_id: str, video_metadata: Dict[str, Any], sour
         "status": "created",
         "steps": {},
         "score": 0,
+        "transcription": "",
+        "transcription_segments": [],
+        "transcription_words": [],
+        "verbal_metrics": None,
+        "content_evaluation": "",
+        "nonverbal_evaluation": None,
     }
     _persist_history_to_disk()
 
@@ -145,6 +163,12 @@ def _update_analysis_steps(analysis_id: str, steps: Dict[str, Any]) -> None:
         session = ANALYSIS_SESSIONS.get(analysis_id)
         if session:
             ANALYSIS_HISTORY[analysis_id]["score"] = _extract_score_from_content(session.get("content_evaluation"))
+            ANALYSIS_HISTORY[analysis_id]["transcription"] = session.get("transcription", "") or ""
+            ANALYSIS_HISTORY[analysis_id]["transcription_segments"] = session.get("transcription_segments", []) or []
+            ANALYSIS_HISTORY[analysis_id]["transcription_words"] = session.get("transcription_words", []) or []
+            ANALYSIS_HISTORY[analysis_id]["verbal_metrics"] = session.get("verbal_metrics")
+            ANALYSIS_HISTORY[analysis_id]["content_evaluation"] = session.get("content_evaluation", "") or ""
+            ANALYSIS_HISTORY[analysis_id]["nonverbal_evaluation"] = session.get("nonverbal_evaluation")
             if not ANALYSIS_HISTORY[analysis_id].get("title"):
                 ANALYSIS_HISTORY[analysis_id]["title"] = session.get("video_metadata", {}).get("title", "")
         _persist_history_to_disk()
@@ -152,6 +176,74 @@ def _update_analysis_steps(analysis_id: str, steps: Dict[str, Any]) -> None:
 def _list_analysis_records() -> list[Dict[str, Any]]:
     records = list(ANALYSIS_HISTORY.values())
     return sorted(records, key=lambda r: r.get("created_at", ""), reverse=True)
+
+def _extract_wpm_from_verbal_metrics(verbal_metrics: Any) -> int:
+    if not isinstance(verbal_metrics, dict):
+        return 0
+    value = verbal_metrics.get("palabras_por_minuto", 0)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+def _extract_fillers_from_verbal_metrics(verbal_metrics: Any) -> int:
+    if not isinstance(verbal_metrics, dict):
+        return 0
+    value = verbal_metrics.get("cantidad_muletillas", 0)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+def _normalize_analysis_name(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+def _calculate_evolution_metrics(current_analysis_id: str) -> Dict[str, Any]:
+    try:
+        records = _list_analysis_records()
+        if not records:
+            return {}
+
+        current_record = ANALYSIS_HISTORY.get(current_analysis_id) or ANALYSIS_SESSIONS.get(current_analysis_id)
+        if not current_record:
+            return {}
+
+        current_name = _normalize_analysis_name(current_record.get("title") or current_record.get("video_metadata", {}).get("title"))
+        if not current_name:
+            return {}
+
+        same_name_records = [
+            record
+            for record in sorted(records, key=lambda record: record.get("created_at", ""))
+            if _normalize_analysis_name(record.get("title")) == current_name
+        ]
+
+        current_index = next(
+            (index for index, record in enumerate(same_name_records) if record.get("analysis_id") == current_analysis_id),
+            None,
+        )
+
+        if current_index is None or current_index == 0:
+            return {}
+
+        previous_record = same_name_records[current_index - 1]
+
+        current_score = int(current_record.get("score") or 0)
+        previous_score = int(previous_record.get("score") or 0)
+        current_wpm = _extract_wpm_from_verbal_metrics(current_record.get("verbal_metrics"))
+        previous_wpm = _extract_wpm_from_verbal_metrics(previous_record.get("verbal_metrics"))
+        current_fillers = _extract_fillers_from_verbal_metrics(current_record.get("verbal_metrics"))
+        previous_fillers = _extract_fillers_from_verbal_metrics(previous_record.get("verbal_metrics"))
+
+        return {
+            "delta_score": current_score - previous_score,
+            "delta_wpm": current_wpm - previous_wpm,
+            "delta_fillers": current_fillers - previous_fillers,
+            "previous_id": previous_record.get("analysis_id", ""),
+        }
+    except Exception as exc:
+        print(f"No se pudieron calcular métricas evolutivas para {current_analysis_id}: {exc}")
+        return {}
 
 # ============================================================================
 # RAG: GESTOR DE RÚBRICAS VECTORIALES (NEON DB)
@@ -363,6 +455,43 @@ async def extract_rubrics(file: UploadFile = File(...), db: Session = Depends(ge
         "suggestedCriteria": sugerencias
     }
 
+# ============================================================================
+# RUTAS DE AUTENTICACIÓN (RF-01)
+# ============================================================================
+
+@app.post("/api/v1/login")
+async def login(request: LoginRequest):
+    """Endpoint para autenticar al evaluador y entregar token JWT"""
+    
+    # Credenciales de prueba oficiales para la co-evaluación
+    USUARIO_OFICIAL = "evaluador@aipitch.cl"
+    PASSWORD_OFICIAL = "Prueba2026!"
+    
+    # 1. Validar Credenciales (Camino Triste)
+    if request.email != USUARIO_OFICIAL or request.password != PASSWORD_OFICIAL:
+        raise HTTPException(
+            status_code=401, 
+            detail="Correo o contraseña incorrectos" # Mismo texto de tu Plan de Pruebas
+        )
+        
+    # 2. Generar Token JWT (Camino Feliz)
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {"sub": request.email, "exp": expire}
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    # 3. Retornar respuesta exitosa
+    return {
+        "status": "success",
+        "message": "Autenticación exitosa",
+        "data": {
+            "access_token": encoded_jwt,
+            "token_type": "bearer",
+            "user": {
+                "email": request.email,
+                "name": "Evaluador Externo"
+            }
+        }
+    }
 
 @app.get("/api/v1/analysis")
 async def list_analysis_history():
@@ -645,7 +774,14 @@ async def get_analysis(analysis_id: str):
             "steps": s.get("steps", {}), 
             "data": {
                 "video_metadata": {"title": s.get("title", "")}, 
-                "content_evaluation": historial_content_string # <--- AHORA ES UN STRING
+                "score": s.get("score", 0),
+                "transcription": s.get("transcription", ""),
+                "transcription_segments": s.get("transcription_segments", []),
+                "transcription_words": s.get("transcription_words", []),
+                "verbal_metrics": s.get("verbal_metrics"),
+                "content_evaluation": s.get("content_evaluation", ""),
+                "nonverbal_evaluation": s.get("nonverbal_evaluation"),
+                "evolution_metrics": _calculate_evolution_metrics(analysis_id)
             }
         }
         
@@ -654,11 +790,14 @@ async def get_analysis(analysis_id: str):
         "steps": s["steps"], 
         "data": {
             "video_metadata": s.get("video_metadata"), 
+            "score": _extract_score_from_content(s.get("content_evaluation")) if isinstance(s.get("content_evaluation"), (str, dict)) else s.get("score", 0),
             "transcription": s.get("transcription"), 
             "transcription_segments": s.get("transcription_segments"), 
+            "transcription_words": s.get("transcription_words"),
             "verbal_metrics": s.get("verbal_metrics"), 
             "content_evaluation": s.get("content_evaluation"), 
-            "nonverbal_evaluation": s.get("nonverbal_evaluation")
+            "nonverbal_evaluation": s.get("nonverbal_evaluation"),
+            "evolution_metrics": _calculate_evolution_metrics(analysis_id)
         }
     }
 

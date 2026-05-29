@@ -5,6 +5,13 @@ export interface Analysis {
   date: string;
   score: number;
   status: 'completed' | 'processing' | 'failed';
+  progressPercent?: number;
+  progressSteps?: {
+    transcription?: boolean;
+    verbal_metrics?: boolean;
+    content?: boolean;
+    nonverbal?: boolean;
+  };
   rubricName?: string;
   transcription?: string;
   verbalMetrics?: {
@@ -14,6 +21,12 @@ export interface Analysis {
   };
   contentFeedback?: string; // mapeamos las recomendaciones del LLM
   nonVerbalFeedback?: string;
+  evolutionMetrics?: {
+    deltaScore: number;
+    deltaWpm: number;
+    deltaFillers: number;
+    previousId: string;
+  };
 }
 
 export interface Rubric {
