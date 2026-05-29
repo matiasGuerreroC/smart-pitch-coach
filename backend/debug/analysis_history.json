@@ -506,5 +506,355 @@
       "duration_seconds": 119.45,
       "analysis": "{\n  \"puntaje_global\": 85,\n  \"fortalezas\": [\n    \"Excelente contacto visual directo y sostenido con la cámara, lo que denota sinceridad y compromiso.\",\n    \"Postura erguida y estable, transmitiendo profesionalismo y seguridad.\",\n    \"Uso de manos controlado y purposeful, que complementa y enfatiza el mensaje sin distraer.\",\n    \"Nivel de confianza alto y consistente, evidente en la fluidez de sus gestos y la mirada fija.\",\n    \"Expresión facial seria y concentrada, apropiada para la seriedad del tema tratado.\"\n  ],\n  \"debilidades\": [\n    \"Rango limitado de expresiones faciales; aunque la seriedad es adecuada para el tema, una mayor variación podría enriquecer la conexión emocional en ciertos puntos.\",\n    \"En algunos momentos, los hombros pueden parecer ligeramente tensos o inclinados hacia adelante, aunque esto es menor.\"\n  ],\n  \"recomendacion\": \"Para futuras presentaciones, la oradora podría explorar una mayor modulación en sus expresiones faciales. Pequeños cambios, como una ligera sonrisa empática al hablar de soluciones o un ceño un poco más marcado al describir problemas, podrían añadir profundidad emocional y mantener la atención del público de forma más dinámica, sin perder la seriedad ni el profesionalismo. Asegurarse de mantener los hombros completamente relajados y hacia atrás también podría proyectar una imagen aún más abierta y segura.\",\n  \"postura\": \"La postura es erguida y estable, transmitiendo una imagen de profesionalismo y compostura. Se mantiene mayormente centrada y con los hombros relativamente relajados, aunque en algunos momentos muestran una mínima tensión o inclinación hacia adelante. Es una postura sólida que denota presencia y confianza.\",\n  \"contacto_visual\": \"El contacto visual es excelente y sostenido. La oradora mira directamente a la cámara de manera consistente, lo que establece una conexión fuerte y directa con la audiencia. Este factor es una de sus mayores fortalezas, demostrando sinceridad y confianza en su mensaje.\",\n  \"uso_manos\": \"El uso de manos es adecuado y funcional. Los gestos son controlados, de tamaño moderado y se utilizan para enfatizar puntos clave y apoyar la narración. Las palmas abiertas y los movimientos fluidos contribuyen a una comunicación clara y confiable, sin ser excesivos ni distractores.\",\n  \"expresion_facial\": \"La expresión facial es predominantemente seria y concentrada. Esta seriedad es apropiada para la naturaleza científica y la gravedad del tema (estrés hídrico, sequías). Si bien denota profesionalismo y enfoque, la falta de una mayor variedad de expresiones puede limitar la conexión emocional en ciertos momentos del discurso.\",\n  \"nivel_confianza\": \"El nivel de confianza es alto. Se manifiesta a través del contacto visual ininterrumpido, la postura estable y el uso efectivo de las manos. La oradora parece estar muy cómoda y segura al presentar su información, lo que refuerza su credibilidad y autoridad en el tema.\"\n}"
     }
+  },
+  "570c9d76-3f33-4d75-8b3e-33b1951644b6": {
+    "analysis_id": "570c9d76-3f33-4d75-8b3e-33b1951644b6",
+    "title": "Fabián Otálora - VIU 2025",
+    "created_at": "2026-05-29T03:16:47.020229",
+    "source_url": "https://www.youtube.com/watch?v=yL9U4wc6b-s",
+    "rubric_id": "anid_viu_2026",
+    "rubric_name": "ANID VIU 2026",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 75,
+    "transcription": " Hola soy Fabiano Otalora, estudiante doctorado en Ingeniería Bioquímica de la Pontificia Universidad Católica Valparaíso. Mi proyecto es producción sostenible de ácidos grasos de cadena media utilizando residuos de la industria vitivinícola, conformado por el profesor Germán Aroca, referente nacional de bioprocesos, la dirección de innovación de la PUCB y la incubadora Crisalis busca solucionar la problemática de la baja disponibilidad nacional de ácidos grasos de cadena media. Estos son principalmente importados por la industria química, quien es responsable del 15% de las emisiones de gases de efecto invernadero a nivel mundial. Adicionalmente en Valparaíso se producen anualmente 27 mil toneladas de residuos vitivinícolas entre orujos y lias. De estos solamente el 25 es valorizado, dejando un pasivo ambiental de 19 mil toneladas. Por eso proponemos valorizar residuos vitivinícolas mediante fermentación en aerobia, generando una plataforma de ácidos carboxílicos biobasados multiproducto y trazables. Esto permite cubrir distintas industrias, reducir el costo de producción final hasta un 50%, evitar importaciones y dar valor a residuos locales con menor impacto ambiental. Nuestra base científico-tecnológica está sustentada en el conocimiento del microorganismo. Durante los últimos cuatro años he estudiado sus cinéticas de fermentación, conozco el consumo de sustratos y el comportamiento fisiológico y metabólico. Esto me permite dar características finales de disminución de costos en la cadena productiva hasta un 50% de estos compuestos, . Y producción sostenible. Y tú, ¿te animas a construir una industria bio basada en Chile?",
+    "transcription_segments": [
+      {
+        "indice": 1,
+        "inicio": 0,
+        "fin": 8.4,
+        "duracion_segundos": 8.4,
+        "texto": "Hola soy Fabiano Otalora, estudiante doctorado en Ingeniería Bioquímica de la Pontificia Universidad Católica Valparaíso.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 2,
+        "inicio": 8.4,
+        "fin": 13.48,
+        "duracion_segundos": 5.08,
+        "texto": "Mi proyecto es producción sostenible de ácidos grasos de cadena media utilizando residuos de la industria vitivinícola,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 3,
+        "inicio": 13.48,
+        "fin": 19.28,
+        "duracion_segundos": 5.8,
+        "texto": "conformado por el profesor Germán Aroca, referente nacional de bioprocesos, la dirección de innovación de la PUCB",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 4,
+        "inicio": 19.28,
+        "fin": 25.76,
+        "duracion_segundos": 6.48,
+        "texto": "y la incubadora Crisalis busca solucionar la problemática de la baja disponibilidad nacional de ácidos grasos de cadena media.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 5,
+        "inicio": 25.76,
+        "fin": 33.76,
+        "duracion_segundos": 8.0,
+        "texto": "Estos son principalmente importados por la industria química, quien es responsable del 15% de las emisiones de gases de efecto invernadero a nivel mundial.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 6,
+        "inicio": 33.76,
+        "fin": 40.76,
+        "duracion_segundos": 7.0,
+        "texto": "Adicionalmente en Valparaíso se producen anualmente 27 mil toneladas de residuos vitivinícolas entre orujos y lias.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 7,
+        "inicio": 40.76,
+        "fin": 45.76,
+        "duracion_segundos": 5.0,
+        "texto": "De estos solamente el 25 es valorizado, dejando un pasivo ambiental de 19 mil toneladas.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 8,
+        "inicio": 45.76,
+        "fin": 54.76,
+        "duracion_segundos": 9.0,
+        "texto": "Por eso proponemos valorizar residuos vitivinícolas mediante fermentación en aerobia, generando una plataforma de ácidos carboxílicos biobasados multiproducto y trazables.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 9,
+        "inicio": 54.76,
+        "fin": 60.14,
+        "duracion_segundos": 5.38,
+        "texto": "Esto permite cubrir distintas industrias, reducir el costo de producción final hasta un 50%,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 10,
+        "inicio": 60.14,
+        "fin": 64.44,
+        "duracion_segundos": 4.3,
+        "texto": "evitar importaciones y dar valor a residuos locales con menor impacto ambiental.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 11,
+        "inicio": 64.44,
+        "fin": 69.72,
+        "duracion_segundos": 5.28,
+        "texto": "Nuestra base científico-tecnológica está sustentada en el conocimiento del microorganismo.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 12,
+        "inicio": 69.72,
+        "fin": 74.2,
+        "duracion_segundos": 4.48,
+        "texto": "Durante los últimos cuatro años he estudiado sus cinéticas de fermentación, conozco el consumo de",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 13,
+        "inicio": 74.2,
+        "fin": 79.12,
+        "duracion_segundos": 4.92,
+        "texto": "sustratos y el comportamiento fisiológico y metabólico. Esto me permite dar características",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 14,
+        "inicio": 79.12,
+        "fin": 84.28,
+        "duracion_segundos": 5.16,
+        "texto": "finales de disminución de costos en la cadena productiva hasta un 50% de estos compuestos,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 15,
+        "inicio": 84.28,
+        "fin": 86.28,
+        "duracion_segundos": 2.0,
+        "texto": ".",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 16,
+        "inicio": 114.28,
+        "fin": 115.68,
+        "duracion_segundos": 1.4,
+        "texto": "Y producción sostenible.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 17,
+        "inicio": 115.68,
+        "fin": 119.06,
+        "duracion_segundos": 3.38,
+        "texto": "Y tú, ¿te animas a construir una industria bio basada en Chile?",
+        "muletillas_detectadas": []
+      }
+    ],
+    "transcription_words": [],
+    "verbal_metrics": {
+      "palabras_por_minuto": 119,
+      "nivel_velocidad": "Muy lento",
+      "cantidad_muletillas": 0,
+      "silencios_largos": [
+        {
+          "inicio": 86.28,
+          "duracion_segundos": 28.0
+        }
+      ]
+    },
+    "content_evaluation": "{\n  \"puntaje_global\": 75,\n  \"puntos_fuertes\": [\n    \"Fuerte alineación con los objetivos del instrumento VIU: El proyecto es liderado por un estudiante de postgrado de una IES chilena, basado directamente en su investigación (tesis), y busca transformar resultados científicos-tecnológicos hacia fines productivos, fomentando una cultura de emprendimiento innovador. Esto cumple cabalmente con la propuesta de valorización de la investigación.\",\n    \"Potencial de impacto económico-social y científico-tecnológico relevante: La propuesta aborda una problemática nacional (baja disponibilidad de ácidos grasos) y local (residuos vitivinícolas), ofreciendo una solución que promete reducir costos, disminuir importaciones, valorizar residuos y mitigar el impacto ambiental (reducción de GEI). Esto se alinea directamente con los impactos esperados por ANID para la competitividad y el bienestar del país. El modelo asociativo con referentes y una incubadora refuerza la capacidad de concretar los desarrollos.\"\n  ],\n  \"puntos_debiles\": [\n    \"Ausencia de claridad explícita sobre la etapa de desarrollo tecnológico y el plan de validación: Aunque se menciona un profundo conocimiento del microorganismo y 4 años de estudio, el pitch no especifica directamente la etapa de los 'Resultados tecnológicos' (ej., Prueba de Concepto, PMV, prototipo) ni detalla un plan de validación robusto para demostrar el valor científico-tecnológico de las ventajas diferenciadoras, lo cual es un requisito explícito para las propuestas según las bases.\",\n    \"Falta de mención a la estrategia de propiedad intelectual y validación del modelo de negocio: Las bases resaltan la 'valorización de la propiedad intelectual' y la 'validación de modelos de negocios' como factores clave de éxito para las EBCT. El pitch, si bien sugiere una propuesta de valor, no aborda explícitamente cómo se protegerá y valorizará la propiedad intelectual de la tecnología ni los pasos para validar el modelo de negocio y asegurar el acceso a mercados.\"\n  ],\n  \"recomendacion\": \"El postulante debe detallar la etapa de madurez tecnológica actual de los resultados (ej. PoC, PMV) y presentar un plan de validación claro para demostrar las ventajas y atributos diferenciadores de su solución. Adicionalmente, es crucial explicitar la estrategia para la protección y valorización de la propiedad intelectual generada, y cómo se validará el modelo de negocio para el desarrollo de mercados existentes o emergentes, aspectos fundamentales para la evaluación según las bases.\"\n}",
+    "nonverbal_evaluation": {
+      "available": true,
+      "frames_sampled": 6,
+      "duration_seconds": 119.05,
+      "analysis": "{\n  \"puntaje_global\": 70,\n  \"fortalezas\": [\n    \"Contacto visual directo y sostenido, que denota sinceridad y conexión con la audiencia.\",\n    \"Postura erguida y estable que proyecta seriedad y profesionalismo.\",\n    \"Nivel de confianza percibido como alto y constante, sin signos de nerviosismo.\"\n  ],\n  \"debilidades\": [\n    \"Expresión facial predominantemente seria y con poca variación, lo que puede restar calidez y dinamismo a la presentación.\",\n    \"Ausencia de uso de las manos visible en el encuadre, lo que limita la capacidad de enfatizar puntos y puede hacer la comunicación menos engaging.\",\n    \"La postura, aunque correcta, carece de apertura o movimiento sutil que podría añadir más energía y cercanía.\"\n  ],\n  \"recomendacion\": \"Para mejorar la comunicación no verbal, se sugiere incorporar más variabilidad en la expresión facial, permitiendo que las emociones o el énfasis se reflejen a través de microexpresiones o sonrisas sutiles en puntos clave. Es fundamental que las manos se utilicen de forma natural para gesticular, ya que esto ayuda a la audiencia a procesar la información y añade dinamismo a la presentación. Si el encuadre lo permite, se debería asegurar que las manos sean visibles para poder emplearlas. Además, practicar una postura que combine la rectitud con una ligera apertura de hombros o movimientos sutiles del torso podría transmitir mayor energía y receptividad.\",\n  \"postura\": \"Erguida y relativamente recta, estable durante todo el fragmento, transmitiendo seriedad y profesionalismo. Sin embargo, carece de dinamismo y una mayor apertura, lo que puede dar una impresión ligeramente estática.\",\n  \"contacto_visual\": \"Excelente. Mantiene un contacto visual directo y constante con la cámara (la audiencia), lo que demuestra confianza, honestidad y un fuerte compromiso con el mensaje que está transmitiendo. No hay desviaciones notables.\",\n  \"uso_manos\": \"Las manos no son visibles en ninguno de los frames proporcionados, lo que impide una evaluación directa de su uso. La ausencia de gestos visibles en la parte superior del cuerpo contribuye a la percepción de una comunicación menos dinámica o expresiva.\",\n  \"expresion_facial\": \"Predominantemente seria y neutra. La boca se mueve al hablar de manera natural. Aunque la seriedad es apropiada para un contexto académico o profesional, la falta de variabilidad (como sonrisas o cejas levantadas para enfatizar) puede hacer que la presentación sea menos cálida y enganchadora.\",\n  \"nivel_confianza\": \"Alto. Se percibe una confianza sólida y un buen dominio del tema, evidenciado por el contacto visual directo, la postura estable y la ausencia de signos de nerviosismo. La seriedad facial refuerza la convicción en su mensaje.\"\n}"
+    }
+  },
+  "14630d42-72c7-43e0-b248-066b36cb0dc0": {
+    "analysis_id": "14630d42-72c7-43e0-b248-066b36cb0dc0",
+    "title": "Fabián Otálora - VIU 2025",
+    "created_at": "2026-05-29T03:25:34.086570",
+    "source_url": "https://www.youtube.com/watch?v=yL9U4wc6b-s",
+    "rubric_id": "anid_viu_2026",
+    "rubric_name": "ANID VIU 2026",
+    "status": "completed",
+    "steps": {
+      "prepared": true,
+      "transcription": true,
+      "verbal_metrics": true,
+      "content": true,
+      "nonverbal": true
+    },
+    "score": 85,
+    "transcription": " Hola soy Fabiano Otálora, estudiante doctorado en Ingeniería Bioquímica de la Pontificia Universidad Católica Valparaíso. Mi proyecto es producción sostenible de ácidos grasos de cadena media utilizando residuos de la industria vitivinícola conformado por el profesor Germán Aroca, referente nacional de bioprocesos, la dirección de innovación de la PUCB y la incubadora Crisalis busca solucionar la problemática de la baja disponibilidad nacional de ácidos grasos de cadena media. Estos son principalmente importados por la industria química, quien es responsable del 15% de las emisiones de gases de efecto invernadero a nivel mundial. Adicionalmente, en Valparaíso se producen anualmente 27.000 toneladas de residuos vitivinícolas entre orujos y lias. De estos, solamente el 25% es valorizado, dejando un pasivo ambiental de 19.000 toneladas. Por eso proponemos valorizar residuos vitivinícolas mediante fermentación en aerobia, generando una plataforma de ácidos carboxílicos biobasados multiproducto y trazables. Esto permite cubrir distintas industrias, reducir el costo de producción final hasta un 50%, evitar importaciones y dar valor a residuos locales con menor impacto ambiental. Nuestra base científico-tecnológica está sustentada en el conocimiento del microorganismo. Durante los últimos cuatro años he estudiado sus cinéticas de fermentación, conozco el consumo de sustratos y el comportamiento fisiológico y metabólico. Esto me permite dar características finales de disminución de costos en la cadena productiva hasta un 50% de estos compuestos, Subtitulado por Jnkoil Y producción sostenible. Y tú, ¿te animas a construir una industria bio basada en Chile?",
+    "transcription_segments": [
+      {
+        "indice": 1,
+        "inicio": 0,
+        "fin": 8.4,
+        "duracion_segundos": 8.4,
+        "texto": "Hola soy Fabiano Otálora, estudiante doctorado en Ingeniería Bioquímica de la Pontificia Universidad Católica Valparaíso.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 2,
+        "inicio": 8.4,
+        "fin": 13.48,
+        "duracion_segundos": 5.08,
+        "texto": "Mi proyecto es producción sostenible de ácidos grasos de cadena media utilizando residuos de la industria vitivinícola",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 3,
+        "inicio": 13.48,
+        "fin": 19.28,
+        "duracion_segundos": 5.8,
+        "texto": "conformado por el profesor Germán Aroca, referente nacional de bioprocesos, la dirección de innovación de la PUCB",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 4,
+        "inicio": 19.28,
+        "fin": 25.76,
+        "duracion_segundos": 6.48,
+        "texto": "y la incubadora Crisalis busca solucionar la problemática de la baja disponibilidad nacional de ácidos grasos de cadena media.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 5,
+        "inicio": 25.76,
+        "fin": 33.76,
+        "duracion_segundos": 8.0,
+        "texto": "Estos son principalmente importados por la industria química, quien es responsable del 15% de las emisiones de gases de efecto invernadero a nivel mundial.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 6,
+        "inicio": 33.76,
+        "fin": 40.76,
+        "duracion_segundos": 7.0,
+        "texto": "Adicionalmente, en Valparaíso se producen anualmente 27.000 toneladas de residuos vitivinícolas entre orujos y lias.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 7,
+        "inicio": 40.76,
+        "fin": 45.76,
+        "duracion_segundos": 5.0,
+        "texto": "De estos, solamente el 25% es valorizado, dejando un pasivo ambiental de 19.000 toneladas.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 8,
+        "inicio": 45.76,
+        "fin": 54.76,
+        "duracion_segundos": 9.0,
+        "texto": "Por eso proponemos valorizar residuos vitivinícolas mediante fermentación en aerobia, generando una plataforma de ácidos carboxílicos biobasados multiproducto y trazables.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 9,
+        "inicio": 54.76,
+        "fin": 60.14,
+        "duracion_segundos": 5.38,
+        "texto": "Esto permite cubrir distintas industrias, reducir el costo de producción final hasta un 50%,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 10,
+        "inicio": 60.14,
+        "fin": 64.44,
+        "duracion_segundos": 4.3,
+        "texto": "evitar importaciones y dar valor a residuos locales con menor impacto ambiental.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 11,
+        "inicio": 64.44,
+        "fin": 69.72,
+        "duracion_segundos": 5.28,
+        "texto": "Nuestra base científico-tecnológica está sustentada en el conocimiento del microorganismo.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 12,
+        "inicio": 69.72,
+        "fin": 74.2,
+        "duracion_segundos": 4.48,
+        "texto": "Durante los últimos cuatro años he estudiado sus cinéticas de fermentación, conozco el consumo de",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 13,
+        "inicio": 74.2,
+        "fin": 79.12,
+        "duracion_segundos": 4.92,
+        "texto": "sustratos y el comportamiento fisiológico y metabólico. Esto me permite dar características",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 14,
+        "inicio": 79.12,
+        "fin": 84.28,
+        "duracion_segundos": 5.16,
+        "texto": "finales de disminución de costos en la cadena productiva hasta un 50% de estos compuestos,",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 15,
+        "inicio": 84.28,
+        "fin": 86.28,
+        "duracion_segundos": 2.0,
+        "texto": "Subtitulado por Jnkoil",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 16,
+        "inicio": 114.28,
+        "fin": 115.68,
+        "duracion_segundos": 1.4,
+        "texto": "Y producción sostenible.",
+        "muletillas_detectadas": []
+      },
+      {
+        "indice": 17,
+        "inicio": 115.68,
+        "fin": 119.06,
+        "duracion_segundos": 3.38,
+        "texto": "Y tú, ¿te animas a construir una industria bio basada en Chile?",
+        "muletillas_detectadas": []
+      }
+    ],
+    "transcription_words": [],
+    "verbal_metrics": {
+      "palabras_por_minuto": 119,
+      "nivel_velocidad": "Muy lento",
+      "cantidad_muletillas": 0,
+      "silencios_largos": [
+        {
+          "inicio": 86.28,
+          "duracion_segundos": 28.0
+        }
+      ]
+    },
+    "content_evaluation": "{\n  \"puntaje_global\": 85,\n  \"puntos_fuertes\": [\n    \"El proyecto demuestra una excelente alineación con los objetivos del instrumento VIU, ya que el proponente es un estudiante de doctorado que busca valorizar su propia investigación (\\\"durante los últimos cuatro años he estudiado sus cinéticas de fermentación\\\") para generar un nuevo emprendimiento con una clara base científico-tecnológica y un propósito de impacto productivo y social (\\\"valorizar residuos vitivinícolas\\\", \\\"reducir el costo de producción final hasta un 50%\\\", \\\"evitar importaciones\\\", \\\"dar valor a residuos locales con menor impacto ambiental\\\").\",\n    \"La propuesta identifica de manera efectiva un problema relevante (baja disponibilidad nacional de ácidos grasos, residuos vitivinícolas no valorizados) y presenta una solución de investigación aplicada que promete impactos económico-sociales y científico-tecnológicos significativos para el país, lo que concuerda con los objetivos de la Subdirección de Investigación Aplicada e Innovación. Además, la conformación del equipo, incluyendo un referente académico, una dirección de innovación y una incubadora, refleja el \\\"modelo asociativo\\\" y la colaboración entre IES y el sector productivo promovida en las bases.\"\n  ],\n  \"puntos_debiles\": [\n    \"Aunque la pitch detalla una sólida base científico-tecnológica, carece de la especificidad requerida sobre la etapa de desarrollo y el plan de validación de los resultados tecnológicos. Las bases exigen que las propuestas consideren \\\"un plan de validación de estos resultados a través de la demostración del valor científico tecnológico en una o más de sus ventajas, atributos y/o características diferenciadoras\\\", y no se menciona explícitamente si se trata de una Prueba de Concepto (PoC), Producto Mínimo Viable (PMV) o prototipo, ni cómo se demostrará su valor.\",\n    \"No se aborda explícitamente la \\\"valorización de la propiedad intelectual\\\", que es señalada en las bases como uno de los factores de éxito clave para la creación de empresas de base científica-tecnológica. Si bien la investigación subyacente es clara, la ausencia de mención a cómo se protegerá o capitalizará esa propiedad intelectual es una omisión importante.\"\n  ],\n  \"recomendacion\": \"El proponente debe complementar su pitch indicando claramente el estado actual de madurez tecnológica de su resultado (ej. PoC, prototipo a escala de laboratorio), y presentar un breve plan sobre cómo se validará este resultado, demostrando sus ventajas y características diferenciadoras. Asimismo, es crucial incluir una mención explícita a la estrategia para la valorización de la propiedad intelectual derivada de su investigación.\"\n}",
+    "nonverbal_evaluation": {
+      "available": true,
+      "frames_sampled": 6,
+      "duration_seconds": 119.05,
+      "analysis": "{\n  \"puntaje_global\": 85,\n  \"fortalezas\": [\n    \"Excelente contacto visual directo y sostenido, que transmite seguridad, honestidad y compromiso con el mensaje.\",\n    \"Postura erguida y abierta, indicando comodidad, control y profesionalismo.\",\n    \"Expresión facial serena y enfocada, que proyecta calma y competencia, sin signos de nerviosismo.\",\n    \"Proyección de un alto nivel de confianza general, reforzado por la estabilidad y el control de los movimientos.\"\n  ],\n  \"debilidades\": [\n    \"Uso limitado o nulo de las manos para gesticular y enfatizar puntos clave. Esto podría hacer que la presentación sea percibida como menos dinámica o apasionada en ciertos momentos.\"\n  ],\n  \"recomendacion\": \"Para añadir mayor dinamismo y enfatizar ideas, se recomienda incorporar gestos manuales moderados y naturales. Estos gestos deben ser conscientes y apoyar el discurso, evitando movimientos excesivos o repetitivos. Es crucial mantener la fortaleza del contacto visual y la postura, que son pilares de su excelente comunicación no verbal.\",\n  \"postura\": \"La postura es erguida, estable y abierta. Los hombros se ven relajados y la cabeza en alto, lo que comunica comodidad y control. No hay signos de encorvamiento o rigidez excesiva, mostrando un buen equilibrio.\",\n  \"contacto_visual\": \"El contacto visual es excepcional y constante. La persona mantiene una mirada directa a la cámara a lo largo de los frames proporcionados, lo que es un indicador fuerte de seguridad, honestidad y conexión con la audiencia.\",\n  \"uso_manos\": \"El uso de las manos es mínimo o inexistente en los frames visibles. Las manos se mantienen mayormente fuera de plano o muy cerca del cuerpo. Esto sugiere una falta de gesticulación para acompañar o enfatizar el discurso, lo que podría restarle dinamismo a la presentación.\",\n  \"expresion_facial\": \"La expresión facial es predominantemente neutra y serena, con un matiz ligeramente agradable. Transmite enfoque y profesionalismo. No se observan ceños fruncidos, tensión o signos de nerviosismo, manteniendo una compostura que apoya su mensaje.\",\n  \"nivel_confianza\": \"El nivel de confianza percibido es alto. Este se evidencia fuertemente por el contacto visual firme, la postura estable y la expresión facial serena y controlada. La ausencia de gestos amplios no resta significativamente a la confianza, sino que podría indicar un estilo de presentación más contenido y formal.\"\n}"
+    }
   }
 }

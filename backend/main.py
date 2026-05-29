@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import jwt
 import json
 import os
 import subprocess
 import uuid
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -67,6 +68,17 @@ class RubricCreateRequest(BaseModel):
     name: str
     description: str
     criteria: Optional[list[str]] = None
+
+# ============================================================================
+# CONFIGURACIÓN SEGURIDAD JWT
+# ============================================================================
+SECRET_KEY = os.getenv("JWT_SECRET", "super_secreto_mvp_aipitch_2026")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # El token dura 24 horas
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 ANALYSIS_SESSIONS: Dict[str, Dict[str, Any]] = {}
 URL_TO_ANALYSIS_ID: Dict[str, str] = {}
@@ -443,6 +455,43 @@ async def extract_rubrics(file: UploadFile = File(...), db: Session = Depends(ge
         "suggestedCriteria": sugerencias
     }
 
+# ============================================================================
+# RUTAS DE AUTENTICACIÓN (RF-01)
+# ============================================================================
+
+@app.post("/api/v1/login")
+async def login(request: LoginRequest):
+    """Endpoint para autenticar al evaluador y entregar token JWT"""
+    
+    # Credenciales de prueba oficiales para la co-evaluación
+    USUARIO_OFICIAL = "evaluador@aipitch.cl"
+    PASSWORD_OFICIAL = "Prueba2026!"
+    
+    # 1. Validar Credenciales (Camino Triste)
+    if request.email != USUARIO_OFICIAL or request.password != PASSWORD_OFICIAL:
+        raise HTTPException(
+            status_code=401, 
+            detail="Correo o contraseña incorrectos" # Mismo texto de tu Plan de Pruebas
+        )
+        
+    # 2. Generar Token JWT (Camino Feliz)
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {"sub": request.email, "exp": expire}
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    # 3. Retornar respuesta exitosa
+    return {
+        "status": "success",
+        "message": "Autenticación exitosa",
+        "data": {
+            "access_token": encoded_jwt,
+            "token_type": "bearer",
+            "user": {
+                "email": request.email,
+                "name": "Evaluador Externo"
+            }
+        }
+    }
 
 @app.get("/api/v1/analysis")
 async def list_analysis_history():
