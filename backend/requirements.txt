@@ -4,7 +4,7 @@ groq
 google-genai
 python-dotenv
 yt-dlp
-opencv-python
+opencv-python-headless
 Pillow
 SQLAlchemy
 psycopg2-binary

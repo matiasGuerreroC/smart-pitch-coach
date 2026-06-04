@@ -7,10 +7,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const isFormData = options.body instanceof FormData;
   const headers = new Headers(options.headers || {});
-  
-  // Solo forzamos JSON si NO es un FormData y no se ha definido otro Content-Type
+
   if (!isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
+  }
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -58,10 +62,19 @@ type SessionResponse = {
     video_metadata?: { title?: string; webpage_url?: string };
     score?: number;
     transcription?: string | null;
+    transcription_segments?: Array<{
+      indice: number;
+      inicio: number;
+      fin: number;
+      duracion_segundos: number;
+      texto: string;
+      muletillas_detectadas: string[];
+    }> | null;
     verbal_metrics?: {
       cantidad_muletillas?: number;
       palabras_por_minuto?: number;
       nivel_velocidad?: string;
+      silencios_largos?: Array<{ inicio: number; duracion_segundos: number }>;
     } | null;
     content_evaluation?: string | null;
     nonverbal_evaluation?: { analysis?: string | null } | null;
@@ -70,6 +83,7 @@ type SessionResponse = {
       delta_wpm?: number;
       delta_fillers?: number;
       previous_id?: string;
+      previous_title?: string;
     } | null;
   };
 };
@@ -88,6 +102,7 @@ function mapHistoryRecord(record: HistoryRecord): Analysis {
 function mapHistoryDetail(record: HistoryRecord): Analysis {
   return {
     ...mapHistoryRecord(record),
+    sourceUrl: record.source_url || undefined,
     transcription: record.transcription || undefined,
     verbalMetrics: undefined,
     contentFeedback: formatContentEvaluation(record.content_evaluation),
@@ -132,12 +147,15 @@ function mapSessionResponse(payload: SessionResponse): Analysis {
       content: Boolean(payload.steps?.content),
       nonverbal: Boolean(payload.steps?.nonverbal),
     },
+    sourceUrl: payload.data?.video_metadata?.webpage_url || undefined,
     transcription: payload.data?.transcription || undefined,
+    transcriptionSegments: payload.data?.transcription_segments ?? undefined,
     verbalMetrics: payload.data?.verbal_metrics
       ? {
           fillerWordsCount: payload.data.verbal_metrics.cantidad_muletillas ?? 0,
           wordsPerMinute: payload.data.verbal_metrics.palabras_por_minuto ?? 0,
           toneEnergy: payload.data.verbal_metrics.nivel_velocidad ?? 'N/A',
+          silences: payload.data.verbal_metrics.silencios_largos ?? [],
         }
       : undefined,
     contentFeedback: formatContentEvaluation(payload.data?.content_evaluation) || undefined,
@@ -148,6 +166,7 @@ function mapSessionResponse(payload: SessionResponse): Analysis {
           deltaWpm: payload.data.evolution_metrics.delta_wpm ?? 0,
           deltaFillers: payload.data.evolution_metrics.delta_fillers ?? 0,
           previousId: payload.data.evolution_metrics.previous_id ?? '',
+          previousTitle: payload.data.evolution_metrics.previous_title,
         }
       : undefined,
   };

@@ -208,25 +208,25 @@ def _calculate_evolution_metrics(current_analysis_id: str) -> Dict[str, Any]:
         if not current_record:
             return {}
 
-        current_name = _normalize_analysis_name(current_record.get("title") or current_record.get("video_metadata", {}).get("title"))
-        if not current_name:
-            return {}
+        current_rubric_id = current_record.get("rubric_id")
 
-        same_name_records = [
+        # Group by rubric_id — analyses with the same rubric are comparable practice sessions
+        same_rubric_records = [
             record
-            for record in sorted(records, key=lambda record: record.get("created_at", ""))
-            if _normalize_analysis_name(record.get("title")) == current_name
+            for record in sorted(records, key=lambda r: r.get("created_at", ""))
+            if record.get("rubric_id") == current_rubric_id
+            and record.get("status") == "completed"
         ]
 
         current_index = next(
-            (index for index, record in enumerate(same_name_records) if record.get("analysis_id") == current_analysis_id),
+            (index for index, record in enumerate(same_rubric_records) if record.get("analysis_id") == current_analysis_id),
             None,
         )
 
         if current_index is None or current_index == 0:
             return {}
 
-        previous_record = same_name_records[current_index - 1]
+        previous_record = same_rubric_records[current_index - 1]
 
         current_score = int(current_record.get("score") or 0)
         previous_score = int(previous_record.get("score") or 0)
@@ -240,6 +240,7 @@ def _calculate_evolution_metrics(current_analysis_id: str) -> Dict[str, Any]:
             "delta_wpm": current_wpm - previous_wpm,
             "delta_fillers": current_fillers - previous_fillers,
             "previous_id": previous_record.get("analysis_id", ""),
+            "previous_title": previous_record.get("title", ""),
         }
     except Exception as exc:
         print(f"No se pudieron calcular métricas evolutivas para {current_analysis_id}: {exc}")

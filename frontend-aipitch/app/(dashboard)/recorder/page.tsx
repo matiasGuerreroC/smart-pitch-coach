@@ -6,17 +6,20 @@ import { Card } from '../../components/ui/Card';
 import { api } from '../../lib/api';
 import { Rubric } from '../../types';
 
+const MAX_SIZE_MB = 100;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
 export default function RecorderPage() {
   const router = useRouter();
   const [rubrics, setRubrics] = useState<Rubric[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fileError, setFileError] = useState('');
 
-  // Estados del formulario
   const [mode, setMode] = useState<'url' | 'upload'>('url');
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [selectedRubric, setSelectedRubric] = useState('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,9 +30,22 @@ export default function RecorderPage() {
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    setFileError('');
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    if (selected.type !== 'video/mp4') {
+      setFileError('Formato no soportado, por favor suba un archivo de video MP4.');
+      e.target.value = '';
+      return;
     }
+    if (selected.size > MAX_SIZE_BYTES) {
+      setFileError(`El video excede el límite máximo de ${MAX_SIZE_MB}MB.`);
+      e.target.value = '';
+      return;
+    }
+
+    setFile(selected);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +55,6 @@ export default function RecorderPage() {
     if (mode === 'upload' && !file) return alert('Sube un archivo de video.');
 
     setLoading(true);
-
     try {
       const payload = mode === 'url' ? url : file!;
       const response = await api.startAnalysis({ type: mode, payload, rubricId: selectedRubric });
@@ -63,14 +78,13 @@ export default function RecorderPage() {
       </div>
 
       <Card>
-        {/* Selector de Modos (Tabs) */}
         <div className="flex p-1 mb-6 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
           <button
             type="button"
-            onClick={() => setMode('url')}
+            onClick={() => { setMode('url'); setFileError(''); }}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-              mode === 'url' 
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
+              mode === 'url'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
@@ -78,10 +92,10 @@ export default function RecorderPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode('upload')}
+            onClick={() => { setMode('upload'); setFileError(''); }}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-              mode === 'upload' 
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
+              mode === 'upload'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
@@ -90,17 +104,16 @@ export default function RecorderPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Renderizado condicional del Input */}
           {mode === 'url' ? (
             <div className="animate-fade-in">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 URL del Video (YouTube / Google Drive)
               </label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-800 dark:text-slate-100"
                 placeholder="https://youtube.com/watch?v=..."
               />
             </div>
@@ -109,36 +122,47 @@ export default function RecorderPage() {
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Archivo de Video Local
               </label>
-              <div 
-                className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition cursor-pointer"
+              <div
+                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition cursor-pointer ${
+                  fileError
+                    ? 'border-rose-400 dark:border-rose-600 bg-rose-50 dark:bg-rose-900/10'
+                    : 'border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <div className="space-y-1 text-center">
-                  <div className="text-4xl mb-3">🎬</div>
+                  <div className="text-4xl mb-3">{fileError ? '⚠️' : '🎬'}</div>
                   <div className="flex text-sm text-slate-600 dark:text-slate-400 justify-center">
                     <span className="relative font-medium text-blue-600 dark:text-blue-400 hover:underline">
                       {file ? file.name : 'Haz clic para seleccionar tu video'}
                     </span>
-                    <input 
+                    <input
                       ref={fileInputRef}
-                      type="file" 
-                      className="hidden" 
-                      accept="video/mp4,video/x-m4v,video/*"
+                      type="file"
+                      className="hidden"
+                      accept="video/mp4"
                       onChange={handleFileChange}
                     />
                   </div>
-                  {!file && <p className="text-xs text-slate-500">MP4, MOV, WEBM hasta 500MB</p>}
+                  {!file && !fileError && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Solo MP4 · Máximo {MAX_SIZE_MB}MB</p>
+                  )}
                 </div>
               </div>
+
+              {fileError && (
+                <p className="mt-2 text-sm text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                  <span>⚠</span> {fileError}
+                </p>
+              )}
             </div>
           )}
 
-          {/* Selector de Rúbricas (Común para ambos modos) */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Seleccionar Rúbrica de Evaluación
             </label>
-            <select 
+            <select
               value={selectedRubric}
               onChange={(e) => setSelectedRubric(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
@@ -150,10 +174,10 @@ export default function RecorderPage() {
             </select>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-semibold py-3 flex justify-center items-center rounded-xl hover:bg-blue-700 transition disabled:opacity-70 disabled:cursor-wait shadow-sm"
+          <button
+            type="submit"
+            disabled={loading || !!fileError}
+            className="w-full bg-blue-600 text-white font-semibold py-3 flex justify-center items-center rounded-xl hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
           >
             {loading ? (
               <>
@@ -163,14 +187,11 @@ export default function RecorderPage() {
                 </svg>
                 {mode === 'upload' ? 'Subiendo y procesando...' : 'Procesando enlace...'}
               </>
-            ) : (
-              'Comenzar Análisis'
-            )}
+            ) : 'Comenzar Análisis'}
           </button>
         </form>
       </Card>
-      
-      {/* Carrusel de Tips Mock */}
+
       <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-xl text-sm text-center border border-blue-100 dark:border-blue-900/50">
         💡 <strong>Tip del Coach:</strong> Asegúrate de que el audio sea claro y mantén contacto visual constante con el lente de la cámara.
       </div>
