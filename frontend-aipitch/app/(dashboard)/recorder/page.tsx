@@ -34,8 +34,9 @@ export default function RecorderPage() {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    if (selected.type !== 'video/mp4') {
-      setFileError('Formato no soportado, por favor suba un archivo de video MP4.');
+    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska', 'video/x-msvideo', 'video/avi'];
+    if (!selected.type.startsWith('video/') && !allowedTypes.includes(selected.type)) {
+      setFileError('Formato no soportado. Sube un video MP4, MOV, WebM o AVI.');
       e.target.value = '';
       return;
     }
@@ -140,12 +141,12 @@ export default function RecorderPage() {
                       ref={fileInputRef}
                       type="file"
                       className="hidden"
-                      accept="video/mp4"
+                      accept="video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo,video/avi"
                       onChange={handleFileChange}
                     />
                   </div>
                   {!file && !fileError && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Solo MP4 · Máximo {MAX_SIZE_MB}MB</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">MP4, MOV, WebM, AVI · Máximo {MAX_SIZE_MB}MB</p>
                   )}
                 </div>
               </div>
