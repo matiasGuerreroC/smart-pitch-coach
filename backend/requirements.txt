@@ -16,3 +16,4 @@ PyMuPDF
 python-multipart
 python-docx
 pyjwt
+youtube-transcript-api

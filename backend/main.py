@@ -545,6 +545,56 @@ def fetch_video_metadata(url: str) -> dict:
     except Exception:
         return {"title": "", "description": "", "channel": "", "duration_seconds": 0, "webpage_url": url}
 
+import re
+import urllib.request
+from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
+
+def _extract_youtube_id(url: str) -> str:
+    match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/)([a-zA-Z0-9_-]{11})', url)
+    if not match:
+        raise ValueError(f"No se pudo extraer el ID de YouTube de: {url}")
+    return match.group(1)
+
+def get_youtube_metadata_oembed(url: str) -> dict:
+    """Metadata via YouTube's free oEmbed endpoint — no authentication needed."""
+    try:
+        oembed_url = f"https://www.youtube.com/oembed?url={url}&format=json"
+        with urllib.request.urlopen(oembed_url, timeout=10) as resp:
+            data = json.loads(resp.read())
+        return {"title": data.get("title", "Video de YouTube"), "description": "", "channel": data.get("author_name", ""), "duration_seconds": 0, "webpage_url": url}
+    except Exception:
+        return {"title": "Video de YouTube", "description": "", "channel": "", "duration_seconds": 0, "webpage_url": url}
+
+def get_youtube_transcript(url: str) -> tuple:
+    """Fetch captions directly from YouTube's subtitle API — no download, no bot detection."""
+    video_id = _extract_youtube_id(url)
+    preferred_langs = ['es', 'es-ES', 'es-MX', 'es-AR', 'es-419', 'en']
+    try:
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        try:
+            transcript = transcript_list.find_transcript(preferred_langs)
+        except NoTranscriptFound:
+            transcript = transcript_list.find_generated_transcript(preferred_langs)
+        entries = transcript.fetch()
+    except TranscriptsDisabled:
+        raise Exception("Este video no tiene subtítulos disponibles. Prueba subiendo el video directamente.")
+    except Exception as e:
+        raise Exception(f"No se pudieron obtener los subtítulos: {str(e)}")
+
+    full_text = ' '.join(e['text'] for e in entries)
+    segments = [
+        {
+            "indice": i + 1,
+            "inicio": round(e['start'], 2),
+            "fin": round(e['start'] + e['duration'], 2),
+            "duracion_segundos": round(e['duration'], 2),
+            "texto": e['text'].strip(),
+            "muletillas_detectadas": [],
+        }
+        for i, e in enumerate(entries)
+    ]
+    return full_text, segments
+
 def _yt_dlp_base_opts() -> dict:
     """Shared yt-dlp options that bypass YouTube bot detection on server IPs.
 
@@ -750,6 +800,10 @@ def _run_content_step(session: Dict[str, Any]) -> None:
 
 def _run_nonverbal_step(session: Dict[str, Any]) -> None:
     if session["steps"]["nonverbal"]: return
+    if not session.get("raw_video_path"):
+        session["nonverbal_evaluation"] = {"available": False, "analysis": None, "reason": "Análisis no verbal no disponible para videos de YouTube. Sube el video directamente para obtener este análisis."}
+        session["steps"]["nonverbal"] = True
+        return
     session["nonverbal_evaluation"] = analyze_nonverbal_with_gemini(session["raw_video_path"])
     session["steps"]["nonverbal"] = True
 
@@ -795,25 +849,31 @@ async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadF
         raise HTTPException(status_code=500, detail=str(e))
 
 def _download_and_run_bg(analysis_id: str, youtube_url: str, rubric_id: Optional[str]):
+    """Fetch YouTube captions + metadata without downloading the video file."""
     session = ANALYSIS_SESSIONS.get(analysis_id)
     if not session:
         return
     try:
-        print(f"⬇️  [DESCARGA] Iniciando descarga de YouTube para ID: {analysis_id}")
-        raw_video_path = download_video_from_youtube(youtube_url, output_filename=str(BASE_DIR / f"temp_video_{analysis_id}"))
-        raw_audio_path = download_audio_from_youtube(youtube_url, output_filename=str(BASE_DIR / f"temp_audio_{analysis_id}"))
-        audio_path = normalize_audio_for_whisper(raw_audio_path)
-        video_metadata = fetch_video_metadata(youtube_url)
+        print(f"📝 [YOUTUBE] Obteniendo subtítulos para ID: {analysis_id}")
 
-        session["raw_video_path"] = raw_video_path
-        session["raw_audio_path"] = raw_audio_path
-        session["audio_path"] = audio_path
+        video_metadata = get_youtube_metadata_oembed(youtube_url)
+        full_text, segments = get_youtube_transcript(youtube_url)
+
+        # Pre-fill transcription so _run_transcription_step is skipped (no audio needed)
         session["video_metadata"] = video_metadata
+        session["transcription"] = full_text
+        session["transcription_segments"] = segments
+        session["transcription_words"] = []
+        session["raw_video_path"] = None   # no video → non-verbal will be marked unavailable
+        session["raw_audio_path"] = None
+        session["audio_path"] = None
         session["steps"]["prepared"] = True
+        session["steps"]["transcription"] = True  # skip Whisper
+
         _save_analysis_record(analysis_id, video_metadata, youtube_url, rubric_id)
-        print(f"✅ [DESCARGA] Completada para ID: {analysis_id}")
+        print(f"✅ [YOUTUBE] Subtítulos obtenidos: {len(segments)} segmentos para ID: {analysis_id}")
     except Exception as e:
-        print(f"❌ [DESCARGA] Error descargando video para ID {analysis_id}: {e}")
+        print(f"❌ [YOUTUBE] Error para ID {analysis_id}: {e}")
         session["steps"]["error"] = str(e)
         return
 
