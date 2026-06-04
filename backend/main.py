@@ -545,15 +545,59 @@ def fetch_video_metadata(url: str) -> dict:
     except Exception:
         return {"title": "", "description": "", "channel": "", "duration_seconds": 0, "webpage_url": url}
 
+def _yt_dlp_base_opts() -> dict:
+    """Shared yt-dlp options that bypass YouTube bot detection on server IPs.
+
+    Strategy:
+    1. Use the Android + iOS player clients — these are less restricted than the
+       default web client and usually don't trigger the 'sign in to confirm' error.
+    2. If a YOUTUBE_COOKIES_B64 env var is set (base64-encoded cookies.txt),
+       decode it to a temp file and pass it to yt-dlp for full authentication.
+    """
+    import base64, tempfile
+
+    opts: dict = {
+        'noplaylist': True,
+        'quiet': True,
+        'no_warnings': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios', 'web'],
+            }
+        },
+    }
+
+    cookies_b64 = os.environ.get('YOUTUBE_COOKIES_B64', '').strip()
+    if cookies_b64:
+        try:
+            cookies_bytes = base64.b64decode(cookies_b64)
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='wb')
+            tmp.write(cookies_bytes)
+            tmp.flush()
+            opts['cookiefile'] = tmp.name
+            print("🍪 [yt-dlp] Usando cookies de YOUTUBE_COOKIES_B64")
+        except Exception as e:
+            print(f"⚠️  [yt-dlp] No se pudo cargar YOUTUBE_COOKIES_B64: {e}")
+
+    return opts
+
+
 def download_audio_from_youtube(url: str, output_filename: str = "temp_audio"):
-    ydl_opts = {'noplaylist': True, 'format': 'bestaudio/best', 'outtmpl': f'{output_filename}.%(ext)s', 'postprocessors':[{'key': 'FFmpegExtractAudio', 'preferredcodec': 'wav', 'preferredquality': '0'}]}
+    opts = _yt_dlp_base_opts()
+    opts.update({
+        'format': 'bestaudio/best',
+        'outtmpl': f'{output_filename}.%(ext)s',
+        'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'wav', 'preferredquality': '0'}],
+    })
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([url])
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
         return f"{output_filename}.wav"
-    except Exception as e: raise Exception(f"Error descargando audio: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error descargando audio: {str(e)}")
 
 def normalize_audio_for_whisper(source_path: str) -> str:
-    normalized_path = source_path.replace(".wav", ".whisper.mp3") 
+    normalized_path = source_path.replace(".wav", ".whisper.mp3")
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     command =[ffmpeg_exe, "-y", "-i", source_path, "-ac", "1", "-ar", "16000", "-b:a", "64k", "-vn", normalized_path]
     result = subprocess.run(command, capture_output=True, text=True)
@@ -561,14 +605,22 @@ def normalize_audio_for_whisper(source_path: str) -> str:
     return normalized_path
 
 def download_video_from_youtube(url: str, output_filename: str = "temp_video") -> str:
-    ydl_opts = {'noplaylist': True, 'format': 'best[ext=mp4]/best', 'merge_output_format': 'mp4', 'outtmpl': f'{output_filename}.%(ext)s', 'quiet': True, 'no_warnings': True}
+    opts = _yt_dlp_base_opts()
+    opts.update({
+        'format': 'best[ext=mp4]/best',
+        'merge_output_format': 'mp4',
+        'outtmpl': f'{output_filename}.%(ext)s',
+    })
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([url])
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
         base_path = Path(output_filename)
         candidates = [p for p in base_path.parent.glob(f"{base_path.name}.*") if p.suffix.lower() in {'.mp4', '.mkv', '.webm', '.mov', '.avi'}]
-        if not candidates: raise Exception("No se encontró el video")
+        if not candidates:
+            raise Exception("No se encontró el video descargado")
         return str(candidates[0])
-    except Exception as e: raise Exception(f"Error descargando video: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error descargando video: {str(e)}")
 
 def extract_audio_from_video(video_path: str, output_filename: str = "temp_audio") -> str:
     out_path = f"{output_filename}.wav"
