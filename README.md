@@ -47,5 +47,4 @@ npm run dev
 
 Abre `http://localhost:3000`.
 
-Si quieres ejecutar el frontend legacy (Ionic/Angular), revisa [frontendold/README.md](frontendold/README.md).
-Para el frontend actual, revisa [frontend-aipitch/README.md](frontend-aipitch/README.md).
+Para más detalles del frontend, revisa [frontend-aipitch/README.md](frontend-aipitch/README.md).

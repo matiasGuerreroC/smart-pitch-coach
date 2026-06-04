@@ -742,22 +742,43 @@ async def start_analysis_upload(background_tasks: BackgroundTasks, file: UploadF
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def _download_and_run_bg(analysis_id: str, youtube_url: str, rubric_id: Optional[str]):
+    session = ANALYSIS_SESSIONS.get(analysis_id)
+    if not session:
+        return
+    try:
+        print(f"⬇️  [DESCARGA] Iniciando descarga de YouTube para ID: {analysis_id}")
+        raw_video_path = download_video_from_youtube(youtube_url, output_filename=str(BASE_DIR / f"temp_video_{analysis_id}"))
+        raw_audio_path = download_audio_from_youtube(youtube_url, output_filename=str(BASE_DIR / f"temp_audio_{analysis_id}"))
+        audio_path = normalize_audio_for_whisper(raw_audio_path)
+        video_metadata = fetch_video_metadata(youtube_url)
+
+        session["raw_video_path"] = raw_video_path
+        session["raw_audio_path"] = raw_audio_path
+        session["audio_path"] = audio_path
+        session["video_metadata"] = video_metadata
+        session["steps"]["prepared"] = True
+        _save_analysis_record(analysis_id, video_metadata, youtube_url, rubric_id)
+        print(f"✅ [DESCARGA] Completada para ID: {analysis_id}")
+    except Exception as e:
+        print(f"❌ [DESCARGA] Error descargando video para ID {analysis_id}: {e}")
+        session["steps"]["error"] = str(e)
+        return
+
+    _run_all_steps_bg(analysis_id)
+
+
 @app.post("/api/v1/analysis/start")
 async def start_analysis(request: AnalysisStartRequest, background_tasks: BackgroundTasks):
-    analysis_id = str(uuid.uuid4())
-    raw_video_path = download_video_from_youtube(request.youtube_url, output_filename=f"temp_video_{analysis_id}")
-    raw_audio_path = download_audio_from_youtube(request.youtube_url, output_filename=f"temp_audio_{analysis_id}")
-    audio_path = normalize_audio_for_whisper(raw_audio_path)
-    video_metadata = fetch_video_metadata(request.youtube_url)
-    
-    session = {"analysis_id": analysis_id, "youtube_url": request.youtube_url, "created_at": datetime.utcnow().isoformat(), "raw_audio_path": raw_audio_path, "audio_path": audio_path, "raw_video_path": raw_video_path, "video_metadata": video_metadata, "transcription": None, "transcription_segments": [], "transcription_words": [], "verbal_metrics": None, "content_evaluation": None, "nonverbal_evaluation": None, "steps": {"prepared": True, "transcription": False, "verbal_metrics": False, "content": False, "nonverbal": False}, "rubric_id": request.rubric_id}
-    
-    ANALYSIS_SESSIONS[analysis_id] = session
-    _save_analysis_record(analysis_id, video_metadata, request.youtube_url, request.rubric_id)
-    
-    background_tasks.add_task(_run_all_steps_bg, analysis_id)
-    
-    return {"status": "success", "analysis_id": analysis_id}
+    try:
+        analysis_id = str(uuid.uuid4())
+        placeholder_metadata = {"title": "Cargando...", "description": "", "channel": "", "duration_seconds": 0, "webpage_url": request.youtube_url}
+        session = {"analysis_id": analysis_id, "youtube_url": request.youtube_url, "created_at": datetime.utcnow().isoformat(), "raw_audio_path": None, "audio_path": None, "raw_video_path": None, "video_metadata": placeholder_metadata, "transcription": None, "transcription_segments": [], "transcription_words": [], "verbal_metrics": None, "content_evaluation": None, "nonverbal_evaluation": None, "steps": {"prepared": False, "transcription": False, "verbal_metrics": False, "content": False, "nonverbal": False}, "rubric_id": request.rubric_id}
+        ANALYSIS_SESSIONS[analysis_id] = session
+        background_tasks.add_task(_download_and_run_bg, analysis_id, request.youtube_url, request.rubric_id)
+        return {"status": "success", "analysis_id": analysis_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al iniciar análisis: {str(e)}")
 
 @app.get("/api/v1/analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
