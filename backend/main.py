@@ -566,32 +566,44 @@ def get_youtube_metadata_oembed(url: str) -> dict:
         return {"title": "Video de YouTube", "description": "", "channel": "", "duration_seconds": 0, "webpage_url": url}
 
 def get_youtube_transcript(url: str) -> tuple:
-    """Fetch captions directly from YouTube's subtitle API — no download, no bot detection."""
+    """Fetch captions directly from YouTube's subtitle API — no download, no bot detection.
+
+    Compatible with youtube-transcript-api >= 0.6.0 (instance-based API).
+    Falls back gracefully to any available transcript if preferred languages aren't found.
+    """
     video_id = _extract_youtube_id(url)
     preferred_langs = ['es', 'es-ES', 'es-MX', 'es-AR', 'es-419', 'en']
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        ytt = YouTubeTranscriptApi()
+        transcript_list = ytt.list(video_id)
         try:
             transcript = transcript_list.find_transcript(preferred_langs)
         except NoTranscriptFound:
-            transcript = transcript_list.find_generated_transcript(preferred_langs)
-        entries = transcript.fetch()
+            try:
+                transcript = transcript_list.find_generated_transcript(preferred_langs)
+            except NoTranscriptFound:
+                transcript = next(iter(transcript_list))
+        fetched = transcript.fetch()
     except TranscriptsDisabled:
         raise Exception("Este video no tiene subtítulos disponibles. Prueba subiendo el video directamente.")
     except Exception as e:
         raise Exception(f"No se pudieron obtener los subtítulos: {str(e)}")
 
-    full_text = ' '.join(e['text'] for e in entries)
+    # Support both object-style snippets (>=0.6) and dict-style (<0.6)
+    def _get(entry, key):
+        return getattr(entry, key) if hasattr(entry, key) else entry[key]
+
+    full_text = ' '.join(_get(e, 'text') for e in fetched)
     segments = [
         {
             "indice": i + 1,
-            "inicio": round(e['start'], 2),
-            "fin": round(e['start'] + e['duration'], 2),
-            "duracion_segundos": round(e['duration'], 2),
-            "texto": e['text'].strip(),
+            "inicio": round(_get(e, 'start'), 2),
+            "fin": round(_get(e, 'start') + _get(e, 'duration'), 2),
+            "duracion_segundos": round(_get(e, 'duration'), 2),
+            "texto": _get(e, 'text').strip(),
             "muletillas_detectadas": [],
         }
-        for i, e in enumerate(entries)
+        for i, e in enumerate(fetched)
     ]
     return full_text, segments
 
