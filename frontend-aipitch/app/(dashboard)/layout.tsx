@@ -4,9 +4,9 @@ import { TopBar } from '../components/layout/TopBar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="flex h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Sidebar - Desktop Solo */}
-      <div className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <div className="hidden md:flex w-64 flex-col border-r border-indigo-100 dark:border-slate-800 bg-indigo-50 dark:bg-slate-900">
         <Sidebar />
       </div>
 
@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Bottom Nav - Mobile Solo */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-indigo-100 dark:border-slate-800 bg-indigo-50 dark:bg-slate-900 z-50">
         <BottomNav />
       </div>
     </div>
