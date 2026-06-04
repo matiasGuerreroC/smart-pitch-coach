@@ -106,34 +106,24 @@ export default function RecorderPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {mode === 'url' ? (
-            <div className="animate-fade-in space-y-3">
+            <div className="animate-fade-in flex flex-col items-center gap-4 py-6 text-center">
+              <span className="text-5xl">🚧</span>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  URL del Video (YouTube)
-                </label>
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-800 dark:text-slate-100"
-                  placeholder="https://youtube.com/watch?v=..."
-                />
-              </div>
-              <div className="flex gap-2.5 items-start bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-                <span className="text-base shrink-0 mt-0.5">⚠️</span>
-                <p>
-                  <strong>Análisis no verbal no disponible por URL.</strong>{' '}
-                  Para obtener el análisis completo de lenguaje corporal, postura y contacto visual,{' '}
-                  <button
-                    type="button"
-                    onClick={() => setMode('upload')}
-                    className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100 transition-colors"
-                  >
-                    sube el video directamente
-                  </button>
-                  .
+                <p className="font-semibold text-slate-700 dark:text-slate-200 text-base">
+                  YouTube no disponible en esta versión
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                  Los proveedores cloud bloquean las descargas de YouTube, por lo que esta función no está disponible en el MVP.
+                  Por ahora, descarga tu video y súbelo directamente.
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setMode('upload')}
+                className="mt-1 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition"
+              >
+                Subir video →
+              </button>
             </div>
           ) : (
             <div className="animate-fade-in">
